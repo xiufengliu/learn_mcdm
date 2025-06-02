@@ -1,0 +1,99 @@
+{
+  "name": "Campus Energy Planning",
+  "description": "A university campus with 15,000 students needs to upgrade its energy system to reduce costs and environmental impact. The campus currently spends $2.5 million annually on electricity and wants to achieve carbon neutrality by 2030. This decision involves selecting the best energy solution for the campus's unique needs, considering academic schedules, budget constraints, and sustainability goals.",
+  "alternatives": [
+    "Rooftop Solar System",
+    "Small Wind Turbines", 
+    "Geothermal Heat Pumps",
+    "Combined Heat & Power",
+    "Energy Efficiency Upgrades"
+  ],
+  "criteria": [
+    "Initial Cost",
+    "Annual Savings", 
+    "Carbon Reduction",
+    "Maintenance Requirements",
+    "Educational Value"
+  ],
+  "criterion_types": [
+    "cost",
+    "benefit", 
+    "benefit",
+    "cost",
+    "benefit"
+  ],
+  "decision_matrix": [
+    [2.5, 450, 85, 25, 9],
+    [1.8, 280, 65, 45, 7],
+    [3.2, 380, 70, 15, 6],
+    [4.1, 620, 75, 35, 8],
+    [1.2, 320, 45, 10, 5]
+  ],
+  "weights": [0.25, 0.30, 0.25, 0.10, 0.10],
+  "created_date": "2024-01-15T11:00:00",
+  "custom": true,
+  "metadata": {
+    "problem_type": "Campus Energy Planning",
+    "complexity": "Intermediate",
+    "real_world_context": "University Sustainability",
+    "learning_objectives": [
+      "Apply MCDM to institutional decision making",
+      "Balance financial and environmental goals", 
+      "Consider educational mission in decisions",
+      "Understand energy system trade-offs"
+    ],
+    "data_sources": "Based on typical campus energy projects and case studies",
+    "units": {
+      "Initial Cost": "Million USD",
+      "Annual Savings": "Thousand USD/year",
+      "Carbon Reduction": "Tons CO2 avoided/year",
+      "Maintenance Requirements": "Hours/month",
+      "Educational Value": "Score 1-10 (10=highest)"
+    },
+    "assumptions": [
+      "15-year project lifecycle",
+      "Campus electricity usage: 25 GWh/year",
+      "Current electricity rate: $0.12/kWh",
+      "Available roof space: 100,000 sq ft",
+      "University sustainability commitments",
+      "Student and faculty engagement opportunities"
+    ],
+    "discussion_points": [
+      "How important is educational value compared to cost savings?",
+      "Should universities prioritize different criteria than businesses?",
+      "How do maintenance requirements affect long-term viability?",
+      "What role should student input play in these decisions?",
+      "How might this decision affect the university's reputation?",
+      "Could multiple alternatives be combined for better results?"
+    ],
+    "alternative_descriptions": {
+      "Rooftop Solar System": "3 MW solar panel installation across multiple campus buildings with battery storage",
+      "Small Wind Turbines": "5 small-scale wind turbines (100 kW each) in open campus areas",
+      "Geothermal Heat Pumps": "Ground-source heat pump system for heating and cooling major buildings",
+      "Combined Heat & Power": "Natural gas CHP system providing both electricity and heating for campus",
+      "Energy Efficiency Upgrades": "LED lighting, smart HVAC, building automation, and insulation improvements"
+    },
+    "criteria_descriptions": {
+      "Initial Cost": "Upfront investment including equipment, installation, and infrastructure modifications",
+      "Annual Savings": "Yearly reduction in energy costs compared to current electricity bills",
+      "Carbon Reduction": "Annual reduction in greenhouse gas emissions from campus operations",
+      "Maintenance Requirements": "Monthly maintenance time and effort needed to keep system operational",
+      "Educational Value": "Opportunities for student learning, research, and engagement with the technology"
+    },
+    "teaching_notes": {
+      "suggested_methods": ["SAW", "TOPSIS", "AHP"],
+      "key_insights": [
+        "Educational institutions often value non-financial criteria more than businesses",
+        "Maintenance requirements can significantly impact total cost of ownership",
+        "Multiple stakeholders (students, faculty, administration) may have different priorities",
+        "Sustainability goals may justify higher upfront costs"
+      ],
+      "extension_activities": [
+        "Survey students about their preferred weights for each criterion",
+        "Research actual campus energy projects at other universities",
+        "Calculate payback periods for each alternative",
+        "Design a stakeholder engagement process for this decision"
+      ]
+    }
+  }
+}

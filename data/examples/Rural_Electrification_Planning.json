@@ -1,0 +1,118 @@
+{
+  "name": "Rural Electrification Planning",
+  "description": "A rural region in a developing country with 50,000 residents currently has limited access to electricity. Only 30% of households have grid connection, and frequent power outages affect economic development. The government has allocated funding to improve energy access and reliability. This decision involves selecting the most appropriate electrification strategy considering local resources, economic constraints, and community needs.",
+  "alternatives": [
+    "Grid Extension",
+    "Mini-Grid Solar", 
+    "Individual Solar Home Systems",
+    "Micro-Hydroelectric",
+    "Biomass Gasification",
+    "Hybrid Renewable System"
+  ],
+  "criteria": [
+    "Implementation Cost",
+    "Households Served", 
+    "Reliability",
+    "Local Job Creation",
+    "Environmental Impact",
+    "Technical Complexity",
+    "Community Acceptance"
+  ],
+  "criterion_types": [
+    "cost",
+    "benefit", 
+    "benefit",
+    "benefit",
+    "benefit",
+    "cost",
+    "benefit"
+  ],
+  "decision_matrix": [
+    [8.5, 15000, 6, 120, 4, 8, 7],
+    [3.2, 8000, 8, 180, 9, 5, 8],
+    [2.1, 5000, 7, 250, 9, 3, 9],
+    [4.8, 12000, 9, 200, 8, 6, 8],
+    [2.8, 7000, 7, 160, 6, 7, 6],
+    [5.5, 10000, 8, 220, 8, 7, 8]
+  ],
+  "weights": [0.20, 0.20, 0.15, 0.15, 0.10, 0.10, 0.10],
+  "created_date": "2024-01-15T11:30:00",
+  "custom": true,
+  "metadata": {
+    "problem_type": "Rural Electrification",
+    "complexity": "Intermediate",
+    "real_world_context": "Development Planning",
+    "learning_objectives": [
+      "Understand energy access challenges in developing regions",
+      "Consider social and economic development factors", 
+      "Evaluate appropriate technology solutions",
+      "Balance cost-effectiveness with community impact"
+    ],
+    "data_sources": "Based on rural electrification studies and development project reports",
+    "units": {
+      "Implementation Cost": "Million USD",
+      "Households Served": "Number of households with reliable electricity access",
+      "Reliability": "Score 1-10 (10=24/7 reliable power)",
+      "Local Job Creation": "Direct and indirect jobs created in the region",
+      "Environmental Impact": "Score 1-10 (10=most environmentally friendly)",
+      "Technical Complexity": "Score 1-10 (10=most complex to implement and maintain)",
+      "Community Acceptance": "Score 1-10 (10=highest community support)"
+    },
+    "assumptions": [
+      "Total households in region: 15,000",
+      "Current grid access: 30% of households",
+      "Average household electricity demand: 100 kWh/month",
+      "Local technical capacity: Limited",
+      "Available funding: $10 million over 5 years",
+      "Government priority: Universal energy access by 2030"
+    ],
+    "discussion_points": [
+      "How do development priorities differ from commercial energy decisions?",
+      "What role should community participation play in technology selection?",
+      "How important is local job creation versus technical efficiency?",
+      "Should solutions prioritize immediate access or long-term sustainability?",
+      "How do financing constraints affect technology choices?",
+      "What are the social impacts of different electrification approaches?"
+    ],
+    "alternative_descriptions": {
+      "Grid Extension": "Extend the national electricity grid to reach all unconnected communities in the region",
+      "Mini-Grid Solar": "Install community-scale solar mini-grids (50-200 kW) to serve village clusters",
+      "Individual Solar Home Systems": "Distribute individual solar systems (50-200W) to households not served by grid",
+      "Micro-Hydroelectric": "Develop small-scale hydroelectric systems (10-100 kW) using local water resources",
+      "Biomass Gasification": "Install biomass gasification plants using agricultural waste and local biomass",
+      "Hybrid Renewable System": "Combine solar, wind, and battery storage in community-scale hybrid systems"
+    },
+    "criteria_descriptions": {
+      "Implementation Cost": "Total cost including equipment, installation, infrastructure, and capacity building",
+      "Households Served": "Number of households that will gain reliable electricity access",
+      "Reliability": "Consistency and availability of electricity supply throughout the year",
+      "Local Job Creation": "Employment opportunities created for local residents during and after implementation",
+      "Environmental Impact": "Positive environmental effects including reduced indoor air pollution and deforestation",
+      "Technical Complexity": "Level of technical expertise required for installation, operation, and maintenance",
+      "Community Acceptance": "Level of community support and willingness to adopt the technology"
+    },
+    "teaching_notes": {
+      "suggested_methods": ["SAW", "TOPSIS"],
+      "key_insights": [
+        "Rural electrification requires different criteria than urban energy planning",
+        "Community acceptance and local capacity are critical success factors",
+        "Job creation can be as important as technical performance",
+        "Environmental benefits include health improvements from reduced indoor pollution",
+        "Financing constraints often favor lower-cost, simpler solutions"
+      ],
+      "extension_activities": [
+        "Research actual rural electrification projects in different countries",
+        "Interview community members about their energy priorities",
+        "Calculate cost per household served for each alternative",
+        "Design a community consultation process for technology selection",
+        "Explore innovative financing mechanisms for rural energy projects"
+      ],
+      "related_sdgs": [
+        "SDG 7: Affordable and Clean Energy",
+        "SDG 1: No Poverty", 
+        "SDG 8: Decent Work and Economic Growth",
+        "SDG 13: Climate Action"
+      ]
+    }
+  }
+}

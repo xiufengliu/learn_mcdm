@@ -1,0 +1,6 @@
+Alternative,Initial Cost,Energy Output,Environmental Impact,Reliability,Maintenance Cost,Land Use
+Solar PV,850000,2500,9,8,25000,15
+Wind Turbines,1200000,3200,8,7,35000,25
+Hydroelectric,2500000,4000,9,9,15000,5
+Biomass,600000,1800,7,6,45000,30
+Geothermal,3000000,3500,10,9,20000,8

@@ -1,0 +1,105 @@
+{
+  "name": "Regional Energy Planning Problem",
+  "description": "A comprehensive energy planning decision for a mid-sized city (population 500,000) that needs to meet growing electricity demand while considering economic, environmental, and social factors. The city currently relies heavily on fossil fuels and wants to transition to a more sustainable energy mix by 2035. This problem involves selecting the optimal combination of energy sources to meet the projected 40% increase in energy demand over the next 10 years.",
+  "alternatives": [
+    "Large-Scale Solar Farm",
+    "Offshore Wind Park", 
+    "Natural Gas Combined Cycle",
+    "Nuclear Power Plant",
+    "Biomass Energy Complex",
+    "Hydroelectric Dam",
+    "Energy Storage + Renewables",
+    "Distributed Solar + Grid"
+  ],
+  "criteria": [
+    "Capital Investment Cost",
+    "Annual Energy Output", 
+    "CO2 Emissions",
+    "Job Creation",
+    "Grid Reliability",
+    "Public Acceptance",
+    "Implementation Time",
+    "Operating Cost"
+  ],
+  "criterion_types": [
+    "cost",
+    "benefit", 
+    "cost",
+    "benefit",
+    "benefit",
+    "benefit",
+    "cost",
+    "cost"
+  ],
+  "decision_matrix": [
+    [1200, 850, 0, 450, 7, 8, 3, 45],
+    [2800, 1400, 0, 320, 6, 7, 5, 85],
+    [800, 1200, 420, 180, 9, 6, 2, 65],
+    [8500, 2200, 0, 800, 10, 4, 8, 120],
+    [950, 600, 85, 280, 7, 7, 4, 75],
+    [3200, 900, 0, 650, 9, 5, 6, 35],
+    [2100, 750, 0, 380, 8, 8, 4, 95],
+    [650, 400, 0, 220, 6, 9, 2, 25]
+  ],
+  "weights": [0.20, 0.25, 0.15, 0.10, 0.15, 0.05, 0.05, 0.05],
+  "created_date": "2024-01-15T10:30:00",
+  "custom": true,
+  "metadata": {
+    "problem_type": "Energy Planning",
+    "complexity": "Advanced",
+    "real_world_context": "Municipal Energy Planning",
+    "learning_objectives": [
+      "Understand multi-stakeholder decision making",
+      "Balance economic and environmental factors", 
+      "Consider implementation constraints",
+      "Evaluate long-term sustainability"
+    ],
+    "data_sources": "Based on typical energy planning studies and industry reports",
+    "units": {
+      "Capital Investment Cost": "Million USD",
+      "Annual Energy Output": "GWh/year",
+      "CO2 Emissions": "kg CO2/MWh",
+      "Job Creation": "Full-time jobs created",
+      "Grid Reliability": "Score 1-10 (10=highest)",
+      "Public Acceptance": "Score 1-10 (10=highest)",
+      "Implementation Time": "Years to full operation", 
+      "Operating Cost": "USD/MWh"
+    },
+    "assumptions": [
+      "20-year project lifecycle",
+      "Current technology costs (2024)",
+      "Regional climate and resource availability",
+      "Existing grid infrastructure constraints",
+      "Local environmental regulations",
+      "Community stakeholder preferences"
+    ],
+    "discussion_points": [
+      "How do different weighting schemes affect the ranking?",
+      "What role does public acceptance play in energy decisions?",
+      "How do upfront costs vs. operating costs influence choices?",
+      "What are the trade-offs between reliability and sustainability?",
+      "How might climate change affect these energy options?",
+      "What financing mechanisms could make expensive options viable?"
+    ],
+    "alternative_descriptions": {
+      "Large-Scale Solar Farm": "500 MW utility-scale solar photovoltaic installation on 2,000 acres of available land outside the city",
+      "Offshore Wind Park": "300 MW offshore wind farm located 15 miles from the coast with 50 turbines",
+      "Natural Gas Combined Cycle": "600 MW natural gas power plant with high efficiency combined cycle technology",
+      "Nuclear Power Plant": "1,000 MW nuclear reactor using latest generation III+ technology with enhanced safety features",
+      "Biomass Energy Complex": "200 MW biomass facility using agricultural waste and dedicated energy crops from the region",
+      "Hydroelectric Dam": "400 MW run-of-river hydroelectric facility on the regional river system",
+      "Energy Storage + Renewables": "Hybrid system combining 300 MW solar/wind with 200 MWh battery storage",
+      "Distributed Solar + Grid": "Distributed rooftop solar program (200 MW) with smart grid upgrades and net metering"
+    },
+    "criteria_descriptions": {
+      "Capital Investment Cost": "Total upfront investment including construction, equipment, and infrastructure",
+      "Annual Energy Output": "Expected electricity generation per year under normal operating conditions",
+      "CO2 Emissions": "Lifecycle carbon dioxide emissions per unit of electricity generated",
+      "Job Creation": "Direct and indirect permanent jobs created during construction and operation phases",
+      "Grid Reliability": "Ability to provide consistent power output and support grid stability",
+      "Public Acceptance": "Community support based on surveys and public consultation processes",
+      "Implementation Time": "Time from project approval to full commercial operation",
+      "Operating Cost": "Annual operating and maintenance costs per unit of electricity generated"
+    }
+  }
+}
