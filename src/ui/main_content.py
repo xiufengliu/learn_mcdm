@@ -256,55 +256,104 @@ def show_calculation_steps():
 def render_step_formula(formula_text, step_number, method_name):
     """Render step formulas with LaTeX when possible"""
 
-    # Try to render specific formulas with LaTeX
+    # Convert formula text to LaTeX based on content and method
     if method_name == 'TOPSIS':
-        if step_number == 2 and 'sqrt' in formula_text:
-            st.write("**Formula:**")
-            st.latex(r"r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{i=1}^{m} x_{ij}^2}}")
-        elif step_number == 3 and 'w_j' in formula_text:
-            st.write("**Formula:**")
-            st.latex(r"v_{ij} = w_j \times r_{ij}")
-        elif step_number == 5 and 'sqrt' in formula_text:
-            st.write("**Formulas:**")
-            st.latex(r"S_i^+ = \sqrt{\sum_{j=1}^{n} (v_{ij} - PIS_j)^2}")
-            st.latex(r"S_i^- = \sqrt{\sum_{j=1}^{n} (v_{ij} - NIS_j)^2}")
-        elif step_number == 6 and 'C*' in formula_text:
-            st.write("**Formula:**")
-            st.latex(r"C_i^* = \frac{S_i^-}{S_i^+ + S_i^-}")
-        else:
-            st.code(formula_text, language='text')
-
+        render_topsis_step_formula(formula_text, step_number)
     elif method_name == 'SAW':
-        if 'sum' in formula_text.lower():
-            st.write("**Formula:**")
-            st.latex(r"S_i = \sum_{j=1}^{n} w_j \times r_{ij}")
-        elif 'max' in formula_text or 'min' in formula_text:
-            st.write("**Normalization Formulas:**")
-            st.latex(r"r_{ij} = \frac{x_{ij}}{\max_i(x_{ij})} \text{ (benefit criteria)}")
-            st.latex(r"r_{ij} = \frac{\min_i(x_{ij})}{x_{ij}} \text{ (cost criteria)}")
-        else:
-            st.code(formula_text, language='text')
-
+        render_saw_step_formula(formula_text, step_number)
     elif method_name == 'WPM':
-        if 'product' in formula_text.lower() or '×' in formula_text:
-            st.write("**Formula:**")
-            st.latex(r"S_i = \prod_{j=1}^{n} (x'_{ij})^{w_j}")
-        else:
-            st.code(formula_text, language='text')
-
+        render_wpm_step_formula(formula_text, step_number)
     elif method_name == 'AHP':
-        if 'eigenvector' in formula_text.lower():
-            st.write("**Formula:**")
-            st.latex(r"A \mathbf{w} = \lambda_{max} \mathbf{w}")
-        elif 'consistency' in formula_text.lower():
-            st.write("**Consistency Formulas:**")
-            st.latex(r"CI = \frac{\lambda_{max} - n}{n - 1}")
-            st.latex(r"CR = \frac{CI}{RI}")
-        else:
-            st.code(formula_text, language='text')
-
+        render_ahp_step_formula(formula_text, step_number)
     else:
         # Fallback to code format
+        st.code(formula_text, language='text')
+
+def render_topsis_step_formula(formula_text, step_number):
+    """Render TOPSIS step formulas with LaTeX"""
+
+    if step_number == 1:
+        st.write("**Formula:**")
+        st.latex(r"X = \begin{bmatrix} x_{11} & x_{12} & \cdots & x_{1n} \\ x_{21} & x_{22} & \cdots & x_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ x_{m1} & x_{m2} & \cdots & x_{mn} \end{bmatrix}")
+    elif step_number == 2:
+        st.write("**Vector Normalization Formula:**")
+        st.latex(r"r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{i=1}^{m} x_{ij}^2}}")
+    elif step_number == 3:
+        st.write("**Weighted Normalized Formula:**")
+        st.latex(r"v_{ij} = w_j \times r_{ij}")
+    elif step_number == 4:
+        st.write("**Ideal Solutions:**")
+        st.latex(r"\text{For benefit criteria: } PIS_j = \max_i(v_{ij}), \quad NIS_j = \min_i(v_{ij})")
+        st.latex(r"\text{For cost criteria: } PIS_j = \min_i(v_{ij}), \quad NIS_j = \max_i(v_{ij})")
+    elif step_number == 5:
+        st.write("**Separation Measures:**")
+        st.latex(r"S_i^+ = \sqrt{\sum_{j=1}^{n} (v_{ij} - PIS_j)^2}")
+        st.latex(r"S_i^- = \sqrt{\sum_{j=1}^{n} (v_{ij} - NIS_j)^2}")
+    elif step_number == 6:
+        st.write("**Relative Closeness:**")
+        st.latex(r"C_i^* = \frac{S_i^-}{S_i^+ + S_i^-}")
+    else:
+        st.code(formula_text, language='text')
+
+def render_saw_step_formula(formula_text, step_number):
+    """Render SAW step formulas with LaTeX"""
+
+    if step_number == 1:
+        st.write("**Decision Matrix:**")
+        st.latex(r"X = \begin{bmatrix} x_{11} & x_{12} & \cdots & x_{1n} \\ x_{21} & x_{22} & \cdots & x_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ x_{m1} & x_{m2} & \cdots & x_{mn} \end{bmatrix}")
+    elif step_number == 2:
+        st.write("**Normalization Formulas:**")
+        st.latex(r"\text{Benefit criteria: } r_{ij} = \frac{x_{ij}}{\max_i(x_{ij})}")
+        st.latex(r"\text{Cost criteria: } r_{ij} = \frac{\min_i(x_{ij})}{x_{ij}}")
+    elif step_number == 3:
+        st.write("**Weighted Values:**")
+        st.latex(r"v_{ij} = w_j \times r_{ij}")
+    elif step_number == 4:
+        st.write("**Final Scores:**")
+        st.latex(r"S_i = \sum_{j=1}^{n} v_{ij}")
+    else:
+        st.code(formula_text, language='text')
+
+def render_wpm_step_formula(formula_text, step_number):
+    """Render WPM step formulas with LaTeX"""
+
+    if step_number == 1:
+        st.write("**Decision Matrix:**")
+        st.latex(r"X = \begin{bmatrix} x_{11} & x_{12} & \cdots & x_{1n} \\ x_{21} & x_{22} & \cdots & x_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ x_{m1} & x_{m2} & \cdots & x_{mn} \end{bmatrix}")
+    elif step_number == 2:
+        st.write("**Cost Criteria Processing:**")
+        st.latex(r"\text{For cost criteria: } p_{ij} = \frac{1}{x_{ij}}")
+        st.latex(r"\text{For benefit criteria: } p_{ij} = x_{ij}")
+    elif step_number == 3:
+        st.write("**Weighted Values (Raised to Powers):**")
+        st.latex(r"v_{ij} = (p_{ij})^{w_j}")
+    elif step_number == 4:
+        st.write("**Final Product Scores:**")
+        st.latex(r"S_i = \prod_{j=1}^{n} v_{ij}")
+    else:
+        st.code(formula_text, language='text')
+
+def render_ahp_step_formula(formula_text, step_number):
+    """Render AHP step formulas with LaTeX"""
+
+    if step_number == 1:
+        st.write("**Criteria Pairwise Comparison:**")
+        st.latex(r"A_{ij} = \text{importance of criterion } i \text{ relative to criterion } j")
+        st.latex(r"A = \begin{bmatrix} 1 & a_{12} & \cdots & a_{1n} \\ 1/a_{12} & 1 & \cdots & a_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ 1/a_{1n} & 1/a_{2n} & \cdots & 1 \end{bmatrix}")
+    elif step_number == 2:
+        st.write("**Priority Vector Calculation:**")
+        st.latex(r"A \mathbf{w} = \lambda_{max} \mathbf{w}")
+        st.write(r"Where $\mathbf{w}$ is the principal eigenvector (criteria weights)")
+    elif step_number == 3:
+        st.write("**Alternative Pairwise Comparisons:**")
+        st.latex(r"A^{(j)}_{ik} = \text{preference of alternative } i \text{ over } k \text{ for criterion } j")
+    elif step_number == 4:
+        st.write("**Final Synthesis:**")
+        st.latex(r"S_i = \sum_{j=1}^{n} w_j \times w_{ij}")
+        st.write("Where:")
+        st.write(r"- $w_j$ = weight of criterion $j$")
+        st.write(r"- $w_{ij}$ = weight of alternative $i$ for criterion $j$")
+    else:
         st.code(formula_text, language='text')
 
 def render_visualizations_tab():
