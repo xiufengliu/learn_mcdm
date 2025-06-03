@@ -402,18 +402,27 @@ def render_visualizations_tab():
         # Method-specific analysis
         if st.session_state.selected_method == 'TOPSIS':
             st.subheader("TOPSIS Distance Analysis")
-            topsis_fig = create_topsis_analysis_chart(method_instance)
-            if topsis_fig:
-                st.plotly_chart(topsis_fig, use_container_width=True)
 
-                st.info("""
-                **Understanding TOPSIS Analysis:**
-                - **Distance to PIS (S+)**: Lower is better (closer to ideal)
-                - **Distance to NIS (S-)**: Higher is better (farther from anti-ideal)
-                - **Relative Closeness (C*)**: Higher is better (final score)
-                """)
+            # Check if method has been executed and has intermediate steps
+            if (method_instance and
+                hasattr(method_instance, 'intermediate_steps') and
+                method_instance.intermediate_steps and
+                's_plus' in method_instance.intermediate_steps):
+
+                topsis_fig = create_topsis_analysis_chart(method_instance)
+                if topsis_fig:
+                    st.plotly_chart(topsis_fig, use_container_width=True)
+
+                    st.info("""
+                    **Understanding TOPSIS Analysis:**
+                    - **Distance to PIS (S+)**: Lower is better (closer to ideal)
+                    - **Distance to NIS (S-)**: Higher is better (farther from anti-ideal)
+                    - **Relative Closeness (C*)**: Higher is better (final score)
+                    """)
+                else:
+                    st.info("Unable to generate TOPSIS visualization. Please recalculate results.")
             else:
-                st.info("TOPSIS-specific visualizations require plotly.")
+                st.info("TOPSIS analysis will be available after calculating results.")
 
         else:
             st.subheader("Method Performance Analysis")

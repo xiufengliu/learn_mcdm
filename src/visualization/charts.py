@@ -270,6 +270,13 @@ def create_topsis_analysis_chart(method_instance):
     steps = method_instance.intermediate_steps
     alternatives = method_instance.alternatives
 
+    # Check if required keys exist in intermediate_steps
+    required_keys = ['s_plus', 's_minus', 'relative_closeness']
+    for key in required_keys:
+        if key not in steps:
+            # Missing required data for TOPSIS visualization
+            return None
+
     # Create subplot with secondary y-axis
     from plotly.subplots import make_subplots
 
