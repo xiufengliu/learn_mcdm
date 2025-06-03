@@ -514,6 +514,43 @@ pip install mcdm
 from skcriteria import Data
 from skcriteria.madm import simple
 """)
+
+    # Add mathematical notation examples
+    st.write("### 📐 Mathematical Notation Guide")
+
+    with st.expander("📖 Common MCDM Mathematical Symbols", expanded=False):
+        st.write("**Basic Notation:**")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.write("**Decision Matrix:**")
+            st.latex(r"X = \begin{bmatrix} x_{11} & x_{12} & \cdots & x_{1n} \\ x_{21} & x_{22} & \cdots & x_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ x_{m1} & x_{m2} & \cdots & x_{mn} \end{bmatrix}")
+
+            st.write("**Weight Vector:**")
+            st.latex(r"W = [w_1, w_2, \ldots, w_n]^T")
+
+            st.write("**Normalization (Vector):**")
+            st.latex(r"r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{k=1}^{m} x_{kj}^2}}")
+
+        with col2:
+            st.write("**Alternative Scores:**")
+            st.latex(r"S_i = f(x_{i1}, x_{i2}, \ldots, x_{in}, w_1, w_2, \ldots, w_n)")
+
+            st.write("**Distance Measures:**")
+            st.latex(r"d(A, B) = \sqrt{\sum_{j=1}^{n} (a_j - b_j)^2}")
+
+            st.write("**Ranking:**")
+            st.latex(r"A_1 \succ A_2 \succ \cdots \succ A_m")
+
+        st.write("**Symbol Definitions:**")
+        st.write(r"- $x_{ij}$ = performance value of alternative $i$ on criterion $j$")
+        st.write(r"- $w_j$ = weight of criterion $j$")
+        st.write(r"- $r_{ij}$ = normalized value")
+        st.write(r"- $S_i$ = final score of alternative $i$")
+        st.write(r"- $m$ = number of alternatives")
+        st.write(r"- $n$ = number of criteria")
+        st.write(r"- $A_i \succ A_j$ = alternative $i$ is preferred to alternative $j$")
     
     st.write("**R Packages:**")
     st.code("""

@@ -105,6 +105,8 @@ def render_example_problems():
         )
 
     with col2:
+        st.write("")
+        st.write("")
         if st.button("Load", help="Load the selected example"):
             if example_choice != "None" and not example_choice.startswith("---"):
                 load_example_problem(example_choice)
