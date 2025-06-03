@@ -153,7 +153,10 @@ def initialize_ahp_session_state():
     """Initialize AHP-specific session state variables"""
     if 'ahp_criteria_matrix' not in st.session_state:
         n_criteria = len(st.session_state.criteria)
-        st.session_state.ahp_criteria_matrix = np.ones((n_criteria, n_criteria))
+        # Explicitly create matrix with 1.0 values
+        st.session_state.ahp_criteria_matrix = np.ones((n_criteria, n_criteria), dtype=np.float64)
+        # Ensure diagonal is exactly 1.0
+        np.fill_diagonal(st.session_state.ahp_criteria_matrix, 1.0)
 
     if 'ahp_alternative_matrices' not in st.session_state:
         st.session_state.ahp_alternative_matrices = {}
@@ -163,8 +166,9 @@ def reset_ahp_session_state():
     n_criteria = len(st.session_state.criteria)
     n_alternatives = len(st.session_state.alternatives)
 
-    # Reset criteria comparison matrix
-    st.session_state.ahp_criteria_matrix = np.ones((n_criteria, n_criteria))
+    # Reset criteria comparison matrix with explicit 1.0 values
+    st.session_state.ahp_criteria_matrix = np.ones((n_criteria, n_criteria), dtype=np.float64)
+    np.fill_diagonal(st.session_state.ahp_criteria_matrix, 1.0)
 
     # Reset alternative comparison matrices
     st.session_state.ahp_alternative_matrices = {}
@@ -179,13 +183,16 @@ def update_ahp_matrices_structure():
         st.session_state.ahp_criteria_matrix.shape != (n_criteria, n_criteria)):
 
         # Try to preserve existing values if possible
-        old_matrix = st.session_state.get('ahp_criteria_matrix', np.ones((n_criteria, n_criteria)))
-        new_matrix = np.ones((n_criteria, n_criteria))
+        old_matrix = st.session_state.get('ahp_criteria_matrix', np.ones((n_criteria, n_criteria), dtype=np.float64))
+        new_matrix = np.ones((n_criteria, n_criteria), dtype=np.float64)
+        np.fill_diagonal(new_matrix, 1.0)
 
         # Copy existing values where possible
         min_size = min(old_matrix.shape[0], n_criteria)
         if min_size > 0:
             new_matrix[:min_size, :min_size] = old_matrix[:min_size, :min_size]
+            # Ensure diagonal remains 1.0 after copying
+            np.fill_diagonal(new_matrix, 1.0)
 
         st.session_state.ahp_criteria_matrix = new_matrix
 
@@ -207,11 +214,21 @@ def update_ahp_matrices_structure():
     for criterion in st.session_state.ahp_alternative_matrices:
         old_matrix = st.session_state.ahp_alternative_matrices[criterion]
         if old_matrix.shape != (n_alternatives, n_alternatives):
-            new_matrix = np.ones((n_alternatives, n_alternatives))
+            new_matrix = np.ones((n_alternatives, n_alternatives), dtype=np.float64)
+            np.fill_diagonal(new_matrix, 1.0)
 
             # Copy existing values where possible
             min_size = min(old_matrix.shape[0], n_alternatives)
             if min_size > 0:
                 new_matrix[:min_size, :min_size] = old_matrix[:min_size, :min_size]
+                # Ensure diagonal remains 1.0 after copying
+                np.fill_diagonal(new_matrix, 1.0)
 
             st.session_state.ahp_alternative_matrices[criterion] = new_matrix
+
+    # Create matrices for criteria that don't have them yet
+    for criterion in st.session_state.criteria:
+        if criterion not in st.session_state.ahp_alternative_matrices:
+            matrix = np.ones((n_alternatives, n_alternatives), dtype=np.float64)
+            np.fill_diagonal(matrix, 1.0)
+            st.session_state.ahp_alternative_matrices[criterion] = matrix

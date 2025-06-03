@@ -90,8 +90,9 @@ def render_criteria_comparisons():
                 # Use slider for comparison
                 try:
                     current_value = st.session_state.ahp_criteria_matrix[i, j]
-                    # Ensure the value is valid
-                    if current_value not in [1/9, 1/7, 1/5, 1/3, 1, 3, 5, 7, 9]:
+                    # Ensure the value is valid (with tolerance for floating point comparison)
+                    valid_values = [1/9, 1/7, 1/5, 1/3, 1, 3, 5, 7, 9]
+                    if not any(abs(current_value - v) < 1e-10 for v in valid_values):
                         current_value = 1
                 except (IndexError, KeyError):
                     current_value = 1
@@ -187,8 +188,9 @@ def render_alternative_comparisons():
             with col2:
                 try:
                     current_value = st.session_state.ahp_alternative_matrices[selected_criterion][i, j]
-                    # Ensure the value is valid
-                    if current_value not in [1/9, 1/7, 1/5, 1/3, 1, 3, 5, 7, 9]:
+                    # Ensure the value is valid (with tolerance for floating point comparison)
+                    valid_values = [1/9, 1/7, 1/5, 1/3, 1, 3, 5, 7, 9]
+                    if not any(abs(current_value - v) < 1e-10 for v in valid_values):
                         current_value = 1
                 except (IndexError, KeyError):
                     current_value = 1
