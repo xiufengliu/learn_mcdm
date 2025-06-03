@@ -302,9 +302,9 @@ def render_saw_step_formula(formula_text, step_number):
         st.write("**Decision Matrix:**")
         st.latex(r"X = \begin{bmatrix} x_{11} & x_{12} & \cdots & x_{1n} \\ x_{21} & x_{22} & \cdots & x_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ x_{m1} & x_{m2} & \cdots & x_{mn} \end{bmatrix}")
     elif step_number == 2:
-        st.write("**Normalization Formulas:**")
-        st.latex(r"\text{Benefit criteria: } r_{ij} = \frac{x_{ij}}{\max_i(x_{ij})}")
-        st.latex(r"\text{Cost criteria: } r_{ij} = \frac{\min_i(x_{ij})}{x_{ij}}")
+        st.write("**Normalization Formulas (Min-Max):**")
+        st.latex(r"\text{Benefit criteria: } r_{ij} = \frac{x_{ij} - \min_j(x_{ij})}{\max_j(x_{ij}) - \min_j(x_{ij})}")
+        st.latex(r"\text{Cost criteria: } r_{ij} = \frac{\max_j(x_{ij}) - x_{ij}}{\max_j(x_{ij}) - \min_j(x_{ij})}")
     elif step_number == 3:
         st.write("**Weighted Values:**")
         st.latex(r"v_{ij} = w_j \times r_{ij}")
@@ -645,12 +645,12 @@ def render_mathematical_foundation(method_name, method_info):
 def render_saw_formulas():
     """Render SAW mathematical formulas"""
 
-    st.write("**Step 1: Normalize the decision matrix**")
+    st.write("**Step 1: Normalize the decision matrix (Min-Max Normalization)**")
     st.write("For benefit criteria:")
-    st.latex(r"r_{ij} = \frac{x_{ij}}{\max_i(x_{ij})}")
+    st.latex(r"r_{ij} = \frac{x_{ij} - \min_j(x_{ij})}{\max_j(x_{ij}) - \min_j(x_{ij})}")
 
     st.write("For cost criteria:")
-    st.latex(r"r_{ij} = \frac{\min_i(x_{ij})}{x_{ij}}")
+    st.latex(r"r_{ij} = \frac{\max_j(x_{ij}) - x_{ij}}{\max_j(x_{ij}) - \min_j(x_{ij})}")
 
     st.write("**Step 2: Calculate weighted normalized values**")
     st.latex(r"v_{ij} = w_j \times r_{ij}")
