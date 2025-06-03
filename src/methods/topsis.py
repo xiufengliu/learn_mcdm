@@ -36,21 +36,21 @@ class TOPSIS(MCDMMethod):
         # Step 2: Calculate weighted normalized decision matrix
         weighted_matrix = self._apply_weights(normalized_matrix)
         
-        # Step 3: Determine ideal solutions
-        pis, nis = self._calculate_ideal_solutions(weighted_matrix)
+        # Step 4: Determine best and worst alternatives
+        a_best, a_worst = self._calculate_ideal_solutions(weighted_matrix)
+
+        # Step 5: Calculate L2-distances
+        d_best, d_worst = self._calculate_separation_measures(weighted_matrix, a_best, a_worst)
+
+        # Step 6: Calculate similarity to worst condition
+        similarity_to_worst = self._calculate_relative_closeness(d_best, d_worst)
         
-        # Step 4: Calculate separation measures
-        s_plus, s_minus = self._calculate_separation_measures(weighted_matrix, pis, nis)
-        
-        # Step 5: Calculate relative closeness
-        relative_closeness = self._calculate_relative_closeness(s_plus, s_minus)
-        
-        # Step 6: Calculate rankings
-        rankings = self.get_ranking(relative_closeness)
-        
+        # Step 7: Rank alternatives according to similarity to worst
+        rankings = self.get_ranking(similarity_to_worst)
+
         # Store results
         self.results = {
-            'scores': relative_closeness.tolist(),
+            'scores': similarity_to_worst.tolist(),
             'rankings': rankings,
             'method': 'TOPSIS'
         }
@@ -60,13 +60,19 @@ class TOPSIS(MCDMMethod):
             'original_matrix': self.decision_matrix,
             'normalized_matrix': normalized_matrix,
             'weighted_matrix': weighted_matrix,
-            'pis': pis,
-            'nis': nis,
-            's_plus': s_plus,
-            's_minus': s_minus,
-            'relative_closeness': relative_closeness,
+            'a_best': a_best,
+            'a_worst': a_worst,
+            'd_best': d_best,
+            'd_worst': d_worst,
+            'similarity_to_worst': similarity_to_worst,
             'weights': self.weights,
-            'criterion_types': self.criterion_types
+            'criterion_types': self.criterion_types,
+            # Keep old names for backward compatibility with visualizations
+            'pis': a_best,
+            'nis': a_worst,
+            's_plus': d_best,
+            's_minus': d_worst,
+            'relative_closeness': similarity_to_worst
         }
         
         return self.results
@@ -94,48 +100,49 @@ class TOPSIS(MCDMMethod):
         return weighted
     
     def _calculate_ideal_solutions(self, weighted_matrix):
-        """Calculate Positive Ideal Solution (PIS) and Negative Ideal Solution (NIS)"""
-        pis = []
-        nis = []
-        
+        """Calculate Best Alternative (Ab) and Worst Alternative (Aw)"""
+        a_best = []  # Best alternative (Ab)
+        a_worst = []  # Worst alternative (Aw)
+
         for i, (col, ctype) in enumerate(zip(weighted_matrix.columns, self.criterion_types)):
             col_values = weighted_matrix[col]
-            
+
             if ctype == 'benefit':
-                # For benefit criteria: PIS = max, NIS = min
-                pis.append(col_values.max())
-                nis.append(col_values.min())
+                # For benefit criteria (J+): Ab = max, Aw = min
+                a_best.append(col_values.max())
+                a_worst.append(col_values.min())
             else:
-                # For cost criteria: PIS = min, NIS = max
-                pis.append(col_values.min())
-                nis.append(col_values.max())
-        
-        return np.array(pis), np.array(nis)
+                # For cost criteria (J-): Ab = min, Aw = max
+                a_best.append(col_values.min())
+                a_worst.append(col_values.max())
+
+        return np.array(a_best), np.array(a_worst)
     
-    def _calculate_separation_measures(self, weighted_matrix, pis, nis):
-        """Calculate separation measures (Euclidean distances)"""
-        s_plus = []  # Distance to PIS
-        s_minus = []  # Distance to NIS
-        
+    def _calculate_separation_measures(self, weighted_matrix, a_best, a_worst):
+        """Calculate L2-distance measures (Euclidean distances)"""
+        d_best = []  # Distance to best alternative (d_ib)
+        d_worst = []  # Distance to worst alternative (d_iw)
+
         for idx in weighted_matrix.index:
             alternative_values = weighted_matrix.loc[idx].values
-            
-            # Distance to PIS
-            d_plus = np.sqrt(np.sum((alternative_values - pis) ** 2))
-            s_plus.append(d_plus)
-            
-            # Distance to NIS
-            d_minus = np.sqrt(np.sum((alternative_values - nis) ** 2))
-            s_minus.append(d_minus)
-        
-        return np.array(s_plus), np.array(s_minus)
+
+            # L2-distance to best alternative
+            d_ib = np.sqrt(np.sum((alternative_values - a_best) ** 2))
+            d_best.append(d_ib)
+
+            # L2-distance to worst alternative
+            d_iw = np.sqrt(np.sum((alternative_values - a_worst) ** 2))
+            d_worst.append(d_iw)
+
+        return np.array(d_best), np.array(d_worst)
     
-    def _calculate_relative_closeness(self, s_plus, s_minus):
-        """Calculate relative closeness to ideal solution"""
+    def _calculate_relative_closeness(self, d_best, d_worst):
+        """Calculate similarity to worst condition (s_iw)"""
+        # s_iw = d_iw / (d_iw + d_ib)
         # Avoid division by zero
-        denominator = s_plus + s_minus
-        relative_closeness = np.where(denominator != 0, s_minus / denominator, 0)
-        return relative_closeness
+        denominator = d_worst + d_best
+        similarity_to_worst = np.where(denominator != 0, d_worst / denominator, 0)
+        return similarity_to_worst
 
     def get_step_by_step_explanation(self):
         """
@@ -165,62 +172,62 @@ class TOPSIS(MCDMMethod):
         # Step 2: Normalized matrix
         explanation['steps'].append({
             'step_number': 2,
-            'title': 'Normalized Decision Matrix',
-            'description': 'Normalize values using vector normalization (divide by the norm of each column).',
+            'title': 'Normalized Decision Matrix (R)',
+            'description': 'Normalize values using vector normalization method.',
             'matrix': self.intermediate_steps['normalized_matrix'],
-            'formula': 'r_ij = x_ij / sqrt(sum(x_ij^2)) for all i'
+            'formula': 'r_ij = x_ij / sqrt(sum(x_kj^2)) for k=1 to m'
         })
 
         # Step 3: Weighted normalized matrix
         explanation['steps'].append({
             'step_number': 3,
-            'title': 'Weighted Normalized Matrix',
-            'description': 'Multiply normalized values by criteria weights.',
+            'title': 'Weighted Normalized Decision Matrix (T)',
+            'description': 'Calculate weighted normalized decision matrix.',
             'matrix': self.intermediate_steps['weighted_matrix'],
-            'formula': 'v_ij = w_j × r_ij'
+            'formula': 't_ij = r_ij × w_j'
         })
 
-        # Step 4: Ideal solutions
-        pis_df = pd.DataFrame([self.intermediate_steps['pis']], columns=self.criteria, index=['PIS'])
-        nis_df = pd.DataFrame([self.intermediate_steps['nis']], columns=self.criteria, index=['NIS'])
-        ideal_solutions_df = pd.concat([pis_df, nis_df])
+        # Step 4: Best and worst alternatives
+        ab_df = pd.DataFrame([self.intermediate_steps['a_best']], columns=self.criteria, index=['A_best'])
+        aw_df = pd.DataFrame([self.intermediate_steps['a_worst']], columns=self.criteria, index=['A_worst'])
+        ideal_solutions_df = pd.concat([ab_df, aw_df])
 
         explanation['steps'].append({
             'step_number': 4,
-            'title': 'Positive and Negative Ideal Solutions',
-            'description': 'Determine the ideal (PIS) and negative ideal (NIS) solutions for each criterion.',
+            'title': 'Best Alternative (Ab) and Worst Alternative (Aw)',
+            'description': 'Determine the best and worst alternatives for each criterion.',
             'matrix': ideal_solutions_df,
-            'formula': 'For benefit criteria: PIS = max(v_ij), NIS = min(v_ij)\nFor cost criteria: PIS = min(v_ij), NIS = max(v_ij)'
+            'formula': 'For benefit criteria (J+): Ab = max(t_ij), Aw = min(t_ij)\nFor cost criteria (J-): Ab = min(t_ij), Aw = max(t_ij)'
         })
 
-        # Step 5: Separation measures
+        # Step 5: L2-distance measures
         separation_df = pd.DataFrame({
             'Alternative': self.alternatives,
-            'Distance to PIS (S+)': self.intermediate_steps['s_plus'],
-            'Distance to NIS (S-)': self.intermediate_steps['s_minus']
+            'Distance to Best (d_ib)': self.intermediate_steps['d_best'],
+            'Distance to Worst (d_iw)': self.intermediate_steps['d_worst']
         })
 
         explanation['steps'].append({
             'step_number': 5,
-            'title': 'Separation Measures',
-            'description': 'Calculate Euclidean distances from each alternative to PIS and NIS.',
+            'title': 'L2-Distance Measures',
+            'description': 'Calculate L2-norm distances from each alternative to best and worst conditions.',
             'matrix': separation_df,
-            'formula': 'S_i+ = sqrt(sum((v_ij - PIS_j)^2))\nS_i- = sqrt(sum((v_ij - NIS_j)^2))'
+            'formula': 'd_ib = sqrt(sum((t_ij - t_bj)^2))\nd_iw = sqrt(sum((t_ij - t_wj)^2))'
         })
 
-        # Step 6: Relative closeness
+        # Step 6: Similarity to worst condition
         results_df = pd.DataFrame({
             'Alternative': self.alternatives,
-            'Relative Closeness (C*)': self.intermediate_steps['relative_closeness'],
+            'Similarity to Worst (s_iw)': self.intermediate_steps['similarity_to_worst'],
             'Rank': self.results['rankings']
         }).sort_values('Rank')
 
         explanation['steps'].append({
             'step_number': 6,
-            'title': 'Relative Closeness and Final Ranking',
-            'description': 'Calculate relative closeness to the ideal solution and determine rankings.',
+            'title': 'Similarity to Worst Condition and Final Ranking',
+            'description': 'Calculate similarity to worst condition and rank alternatives (higher s_iw is better).',
             'matrix': results_df,
-            'formula': 'C*_i = S_i- / (S_i+ + S_i-)'
+            'formula': 's_iw = d_iw / (d_iw + d_ib)'
         })
 
         return explanation

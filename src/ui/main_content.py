@@ -273,25 +273,27 @@ def render_topsis_step_formula(formula_text, step_number):
     """Render TOPSIS step formulas with LaTeX"""
 
     if step_number == 1:
-        st.write("**Formula:**")
-        st.latex(r"X = \begin{bmatrix} x_{11} & x_{12} & \cdots & x_{1n} \\ x_{21} & x_{22} & \cdots & x_{2n} \\ \vdots & \vdots & \ddots & \vdots \\ x_{m1} & x_{m2} & \cdots & x_{mn} \end{bmatrix}")
+        st.write("**Evaluation Matrix:**")
+        st.latex(r"X = (x_{ij})_{m \times n}")
     elif step_number == 2:
-        st.write("**Vector Normalization Formula:**")
-        st.latex(r"r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{i=1}^{m} x_{ij}^2}}")
+        st.write("**Vector Normalization:**")
+        st.latex(r"r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{k=1}^{m} x_{kj}^2}}")
     elif step_number == 3:
-        st.write("**Weighted Normalized Formula:**")
-        st.latex(r"v_{ij} = w_j \times r_{ij}")
+        st.write("**Weighted Normalized Decision Matrix:**")
+        st.latex(r"t_{ij} = r_{ij} \cdot w_j")
     elif step_number == 4:
-        st.write("**Ideal Solutions:**")
-        st.latex(r"\text{For benefit criteria: } PIS_j = \max_i(v_{ij}), \quad NIS_j = \min_i(v_{ij})")
-        st.latex(r"\text{For cost criteria: } PIS_j = \min_i(v_{ij}), \quad NIS_j = \max_i(v_{ij})")
+        st.write("**Best and Worst Alternatives:**")
+        st.latex(r"A_b = \{t_{bj} | j = 1,2,\ldots,n\}")
+        st.latex(r"A_w = \{t_{wj} | j = 1,2,\ldots,n\}")
+        st.write("Where $t_{bj}$ and $t_{wj}$ are determined based on criterion type")
     elif step_number == 5:
-        st.write("**Separation Measures:**")
-        st.latex(r"S_i^+ = \sqrt{\sum_{j=1}^{n} (v_{ij} - PIS_j)^2}")
-        st.latex(r"S_i^- = \sqrt{\sum_{j=1}^{n} (v_{ij} - NIS_j)^2}")
+        st.write("**L2-Distance Measures:**")
+        st.latex(r"d_{ib} = \sqrt{\sum_{j=1}^{n} (t_{ij} - t_{bj})^2}")
+        st.latex(r"d_{iw} = \sqrt{\sum_{j=1}^{n} (t_{ij} - t_{wj})^2}")
     elif step_number == 6:
-        st.write("**Relative Closeness:**")
-        st.latex(r"C_i^* = \frac{S_i^-}{S_i^+ + S_i^-}")
+        st.write("**Similarity to Worst Condition:**")
+        st.latex(r"s_{iw} = \frac{d_{iw}}{d_{iw} + d_{ib}}")
+        st.write("Higher $s_{iw}$ indicates better alternative")
     else:
         st.code(formula_text, language='text')
 
@@ -703,28 +705,41 @@ def render_wpm_formulas():
 def render_topsis_formulas():
     """Render TOPSIS mathematical formulas"""
 
-    st.write("**Step 1: Vector normalization**")
-    st.latex(r"r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{i=1}^{m} x_{ij}^2}}")
+    st.write("**Step 1: Create evaluation matrix**")
+    st.latex(r"X = (x_{ij})_{m \times n}")
 
-    st.write("**Step 2: Weighted normalized matrix**")
-    st.latex(r"v_{ij} = w_j \times r_{ij}")
+    st.write("**Step 2: Vector normalization**")
+    st.latex(r"r_{ij} = \frac{x_{ij}}{\sqrt{\sum_{k=1}^{m} x_{kj}^2}}")
 
-    st.write("**Step 3: Determine ideal solutions**")
-    st.write("For benefit criteria:")
-    st.latex(r"PIS_j = \max_i(v_{ij}), \quad NIS_j = \min_i(v_{ij})")
+    st.write("**Step 3: Weighted normalized decision matrix**")
+    st.latex(r"t_{ij} = r_{ij} \cdot w_j")
 
-    st.write("For cost criteria:")
-    st.latex(r"PIS_j = \min_i(v_{ij}), \quad NIS_j = \max_i(v_{ij})")
+    st.write("**Step 4: Determine best and worst alternatives**")
+    st.write("Best alternative (Ab):")
+    st.latex(r"A_b = \{t_{bj} | j = 1,2,\ldots,n\}")
+    st.write("Where for benefit criteria (J+): $t_{bj} = \\max_i(t_{ij})$, for cost criteria (J-): $t_{bj} = \\min_i(t_{ij})$")
 
-    st.write("**Step 4: Calculate separation measures**")
-    st.latex(r"S_i^+ = \sqrt{\sum_{j=1}^{n} (v_{ij} - PIS_j)^2}")
-    st.latex(r"S_i^- = \sqrt{\sum_{j=1}^{n} (v_{ij} - NIS_j)^2}")
+    st.write("Worst alternative (Aw):")
+    st.latex(r"A_w = \{t_{wj} | j = 1,2,\ldots,n\}")
+    st.write("Where for benefit criteria (J+): $t_{wj} = \\min_i(t_{ij})$, for cost criteria (J-): $t_{wj} = \\max_i(t_{ij})$")
 
-    st.write("**Step 5: Calculate relative closeness**")
-    st.latex(r"C_i^* = \frac{S_i^-}{S_i^+ + S_i^-}")
+    st.write("**Step 5: Calculate L2-distances**")
+    st.latex(r"d_{ib} = \sqrt{\sum_{j=1}^{n} (t_{ij} - t_{bj})^2}")
+    st.latex(r"d_{iw} = \sqrt{\sum_{j=1}^{n} (t_{ij} - t_{wj})^2}")
 
-    st.write("**Step 6: Rank alternatives**")
-    st.write("Rank alternatives by $C_i^*$ (higher is better)")
+    st.write("**Step 6: Calculate similarity to worst condition**")
+    st.latex(r"s_{iw} = \frac{d_{iw}}{d_{iw} + d_{ib}}")
+
+    st.write("**Step 7: Rank alternatives**")
+    st.write("Rank alternatives by $s_{iw}$ (higher is better)")
+
+    st.write("Where:")
+    st.write("- $x_{ij}$ = value of alternative $i$ for criterion $j$")
+    st.write("- $r_{ij}$ = normalized value")
+    st.write("- $t_{ij}$ = weighted normalized value")
+    st.write("- $w_j$ = weight of criterion $j$")
+    st.write("- $d_{ib}, d_{iw}$ = L2-distances to best and worst alternatives")
+    st.write("- $s_{iw}$ = similarity to worst condition")
 
 def render_ahp_formulas():
     """Render AHP mathematical formulas"""
