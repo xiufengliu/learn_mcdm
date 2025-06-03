@@ -82,7 +82,7 @@ EXAMPLE_PROBLEMS = {
         ],
         "weights": [0.25, 0.3, 0.15, 0.2, 0.1]
     },
-    "Software Selection (AHP)": {
+    "Software Selection": {
         "description": "Selecting project management software using AHP",
         "alternatives": ["Software A", "Software B", "Software C"],
         "criteria": ["Cost", "Usability", "Features", "Support"],

@@ -615,7 +615,7 @@ def render_method_guide():
         st.write("**🌱 Renewable Energy Selection**")
         st.write("Environmental decision comparing energy technologies (Solar, Wind, Hydro, Biomass, Geothermal) on cost, output, environmental impact, reliability, maintenance, and land use.")
 
-        st.write("**💻 Software Selection (AHP)**")
+        st.write("**💻 Software Selection**")
         st.write("Technology decision using pairwise comparisons to evaluate project management software options.")
 
         st.write("**📝 Custom Problems**")

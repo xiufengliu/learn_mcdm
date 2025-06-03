@@ -130,7 +130,7 @@ mcdm/
 2. **Supplier Selection** - Business decision scenario
 3. **University Selection** - Educational choice scenario
 4. **Renewable Energy Selection** - Environmental decision scenario
-5. **Software Selection (AHP)** - Technology decision with pairwise comparisons
+5. **Software Selection** - Technology decision with pairwise comparisons
 6. **Custom Problems** - User-created scenarios
 
 ### **Learning Resources:**
