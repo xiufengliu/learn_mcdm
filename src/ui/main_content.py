@@ -325,11 +325,13 @@ def render_wpm_step_formula(formula_text, step_number):
         st.latex(r"\text{For cost criteria: } p_{ij} = \frac{1}{x_{ij}}")
         st.latex(r"\text{For benefit criteria: } p_{ij} = x_{ij}")
     elif step_number == 3:
-        st.write("**Weighted Values (Raised to Powers):**")
-        st.latex(r"v_{ij} = (p_{ij})^{w_j}")
+        st.write("**Pairwise Comparison Ratios:**")
+        st.latex(r"P(A_k/A_l) = \prod_{j=1}^{n} \left(\frac{p_{kj}}{p_{lj}}\right)^{w_j}")
+        st.write("If $P(A_k/A_l) \\geq 1$, then alternative $A_k$ is preferred over $A_l$")
     elif step_number == 4:
-        st.write("**Final Product Scores:**")
-        st.latex(r"S_i = \prod_{j=1}^{n} v_{ij}")
+        st.write("**Final Scores (Geometric Mean):**")
+        st.latex(r"S_k = \left(\prod_{l=1}^{m} P(A_k/A_l)\right)^{1/m}")
+        st.write("Where $m$ = number of alternatives")
     else:
         st.code(formula_text, language='text')
 
