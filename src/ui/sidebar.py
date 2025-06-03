@@ -5,6 +5,8 @@ Sidebar UI components for method selection and problem setup
 import streamlit as st
 import pandas as pd
 import numpy as np
+from datetime import datetime
+import io
 from config.settings import MCDM_METHODS, EXAMPLE_PROBLEMS, UI_CONFIG
 from src.utils.session_state import load_example_problem, reset_problem, update_decision_matrix_structure
 from src.utils.validation import validate_weights, display_validation_messages
@@ -287,7 +289,189 @@ def render_options():
         help="Display step-by-step calculations for educational purposes"
     )
     
-    # Download options (placeholder for future implementation)
+    # Download options
     st.sidebar.write("**Export Options:**")
-    st.sidebar.button("📊 Download Results", disabled=True, help="Coming soon!")
-    st.sidebar.button("📋 Download Data", disabled=True, help="Coming soon!")
+
+    # Download Results button
+    if st.session_state.results:
+        results_data = generate_results_download()
+        if results_data:
+            st.sidebar.download_button(
+                label="📊 Download Results",
+                data=results_data,
+                file_name=f"mcdm_results_{st.session_state.selected_method.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                help="Download complete results with scores, rankings, and method details"
+            )
+    else:
+        st.sidebar.button("📊 Download Results", disabled=True, help="Calculate results first to download")
+
+    # Download Data button
+    if hasattr(st.session_state, 'decision_matrix') and st.session_state.decision_matrix is not None:
+        data_content = generate_data_download()
+        if data_content:
+            st.sidebar.download_button(
+                label="📋 Download Data",
+                data=data_content,
+                file_name=f"mcdm_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                help="Download input data including decision matrix, weights, and criteria types"
+            )
+    else:
+        st.sidebar.button("📋 Download Data", disabled=True, help="Input data first to download")
+
+def generate_results_download():
+    """Generate CSV content for results download"""
+
+    try:
+        if not st.session_state.results:
+            return None
+
+        # Get results data
+        results = st.session_state.results
+        method_name = st.session_state.selected_method
+
+        # Create results DataFrame
+        results_data = []
+
+        # Add header information
+        results_data.append({
+            'Section': 'METADATA',
+            'Alternative': 'Method',
+            'Criterion': method_name,
+            'Value': f"{method_name} Results",
+            'Score': '',
+            'Rank': '',
+            'Notes': f"Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        })
+
+        results_data.append({
+            'Section': 'METADATA',
+            'Alternative': 'Problem',
+            'Criterion': 'Alternatives',
+            'Value': len(st.session_state.alternatives),
+            'Score': '',
+            'Rank': '',
+            'Notes': f"Criteria: {len(st.session_state.criteria)}"
+        })
+
+        # Add empty row
+        results_data.append({
+            'Section': '', 'Alternative': '', 'Criterion': '', 'Value': '', 'Score': '', 'Rank': '', 'Notes': ''
+        })
+
+        # Add final scores and rankings
+        for i, (alt, score) in enumerate(zip(st.session_state.alternatives, results['scores'])):
+            rank = results['rankings'][i] if 'rankings' in results else i + 1
+            results_data.append({
+                'Section': 'RESULTS',
+                'Alternative': alt,
+                'Criterion': 'Final Score',
+                'Value': f"{score:.6f}",
+                'Score': f"{score:.6f}",
+                'Rank': rank,
+                'Notes': f"Rank {rank}"
+            })
+
+        # Add empty row
+        results_data.append({
+            'Section': '', 'Alternative': '', 'Criterion': '', 'Value': '', 'Score': '', 'Rank': '', 'Notes': ''
+        })
+
+        # Add criteria weights
+        for i, (criterion, weight) in enumerate(zip(st.session_state.criteria, st.session_state.weights)):
+            crit_type = st.session_state.criterion_types[i]
+            results_data.append({
+                'Section': 'WEIGHTS',
+                'Alternative': 'All',
+                'Criterion': criterion,
+                'Value': f"{weight:.6f}",
+                'Score': '',
+                'Rank': '',
+                'Notes': f"Type: {crit_type}"
+            })
+
+        # Add empty row
+        results_data.append({
+            'Section': '', 'Alternative': '', 'Criterion': '', 'Value': '', 'Score': '', 'Rank': '', 'Notes': ''
+        })
+
+        # Add decision matrix
+        if hasattr(st.session_state, 'decision_matrix') and st.session_state.decision_matrix is not None:
+            for i, alt in enumerate(st.session_state.alternatives):
+                for j, criterion in enumerate(st.session_state.criteria):
+                    value = st.session_state.decision_matrix.iloc[i, j]
+                    results_data.append({
+                        'Section': 'INPUT_DATA',
+                        'Alternative': alt,
+                        'Criterion': criterion,
+                        'Value': f"{value:.6f}",
+                        'Score': '',
+                        'Rank': '',
+                        'Notes': f"Original input value"
+                    })
+
+        # Convert to DataFrame and then CSV
+        df = pd.DataFrame(results_data)
+
+        # Convert to CSV string
+        output = io.StringIO()
+        df.to_csv(output, index=False)
+        return output.getvalue()
+
+    except Exception as e:
+        st.error(f"Error generating results download: {e}")
+        return None
+
+def generate_data_download():
+    """Generate CSV content for data download"""
+
+    try:
+        if not hasattr(st.session_state, 'decision_matrix') or st.session_state.decision_matrix is None:
+            return None
+
+        # Create a comprehensive data export
+        output = io.StringIO()
+
+        # Write metadata
+        output.write("# MCDM Input Data Export\n")
+        output.write(f"# Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        output.write(f"# Method: {st.session_state.selected_method}\n")
+        output.write(f"# Alternatives: {len(st.session_state.alternatives)}\n")
+        output.write(f"# Criteria: {len(st.session_state.criteria)}\n")
+        output.write("\n")
+
+        # Write decision matrix
+        output.write("# Decision Matrix\n")
+
+        # Create decision matrix with proper headers
+        matrix_df = st.session_state.decision_matrix.copy()
+        matrix_df.index = st.session_state.alternatives
+        matrix_df.columns = st.session_state.criteria
+
+        matrix_df.to_csv(output)
+        output.write("\n")
+
+        # Write criteria information
+        output.write("# Criteria Information\n")
+        criteria_info = pd.DataFrame({
+            'Criterion': st.session_state.criteria,
+            'Type': st.session_state.criterion_types,
+            'Weight': st.session_state.weights
+        })
+        criteria_info.to_csv(output, index=False)
+        output.write("\n")
+
+        # Write alternatives list
+        output.write("# Alternatives\n")
+        alternatives_df = pd.DataFrame({
+            'Alternative': st.session_state.alternatives,
+            'Index': range(len(st.session_state.alternatives))
+        })
+        alternatives_df.to_csv(output, index=False)
+
+        return output.getvalue()
+
+    except Exception as e:
+        st.error(f"Error generating data download: {e}")
+        return None
