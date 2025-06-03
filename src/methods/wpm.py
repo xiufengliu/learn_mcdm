@@ -23,66 +23,91 @@ class WPM(MCDMMethod):
     
     def calculate(self):
         """
-        Calculate WPM scores and rankings
-        
+        Calculate WPM scores and rankings using the ratio-based approach
+
         Returns:
             dict: Results with scores, rankings, and intermediate steps
         """
-        # For WPM, we work with the original matrix but handle cost criteria
         matrix = self.decision_matrix.copy()
-        
-        # Step 1: Handle cost criteria by taking reciprocals
+        n_alternatives = len(self.alternatives)
+
+        # Step 1: Handle cost criteria by taking reciprocals (convert to benefit)
         processed_matrix = matrix.copy()
         for i, (col, ctype) in enumerate(zip(matrix.columns, self.criterion_types)):
             if ctype == 'cost':
                 # For cost criteria, use reciprocal (1/x) to convert to benefit
                 processed_matrix[col] = 1.0 / matrix[col]
-        
-        # Step 2: Raise each value to the power of its weight
-        weighted_matrix = processed_matrix.copy()
-        for i, col in enumerate(weighted_matrix.columns):
-            weighted_matrix[col] = processed_matrix[col] ** self.weights[i]
-        
-        # Step 3: Calculate product scores
-        scores = weighted_matrix.prod(axis=1).values
-        
+
+        # Step 2: Calculate pairwise comparison ratios
+        # Create a matrix to store P(Ak/Al) values
+        comparison_matrix = np.zeros((n_alternatives, n_alternatives))
+
+        for k in range(n_alternatives):
+            for l in range(n_alternatives):
+                if k == l:
+                    comparison_matrix[k, l] = 1.0  # P(Ak/Ak) = 1
+                else:
+                    # Calculate P(Ak/Al) = ∏(akj/alj)^wj
+                    ratio_product = 1.0
+                    for j, col in enumerate(processed_matrix.columns):
+                        ratio = processed_matrix.iloc[k, j] / processed_matrix.iloc[l, j]
+                        ratio_product *= (ratio ** self.weights[j])
+                    comparison_matrix[k, l] = ratio_product
+
+        # Step 3: Calculate final scores
+        # An alternative's score is how many times it's better than or equal to others
+        scores = np.sum(comparison_matrix >= 1.0, axis=1)
+
+        # Alternative approach: Use geometric mean of ratios as score
+        # This gives more nuanced scoring
+        geometric_scores = np.zeros(n_alternatives)
+        for k in range(n_alternatives):
+            # Calculate geometric mean of all ratios for alternative k
+            ratios = comparison_matrix[k, :]
+            geometric_scores[k] = np.power(np.prod(ratios), 1.0/n_alternatives)
+
+        # Use geometric scores for final ranking (more discriminating)
+        final_scores = geometric_scores
+
         # Step 4: Calculate rankings
-        rankings = self.get_ranking(scores)
-        
+        rankings = self.get_ranking(final_scores)
+
         # Store results
         self.results = {
-            'scores': scores.tolist(),
+            'scores': final_scores.tolist(),
             'rankings': rankings,
             'method': 'WPM'
         }
-        
+
         # Store intermediate steps for educational purposes
         self.intermediate_steps = {
             'original_matrix': self.decision_matrix,
             'processed_matrix': processed_matrix,
-            'weighted_matrix': weighted_matrix,
+            'comparison_matrix': comparison_matrix,
+            'pairwise_scores': scores,
+            'geometric_scores': geometric_scores,
             'weights': self.weights,
             'criterion_types': self.criterion_types
         }
-        
+
         return self.results
     
     def get_step_by_step_explanation(self):
         """
         Get detailed step-by-step explanation of the calculation
-        
+
         Returns:
             dict: Step-by-step explanation with matrices and descriptions
         """
         if not self.results:
             self.calculate()
-        
+
         explanation = {
             'method_name': 'Weighted Product Method (WPM)',
-            'description': 'WPM calculates weighted products of criteria values.',
+            'description': 'WPM uses pairwise comparisons with ratio-based calculations to rank alternatives.',
             'steps': []
         }
-        
+
         # Step 1: Original matrix
         explanation['steps'].append({
             'step_number': 1,
@@ -91,40 +116,46 @@ class WPM(MCDMMethod):
             'matrix': self.intermediate_steps['original_matrix'],
             'formula': 'X = [x_ij] where i = alternatives, j = criteria'
         })
-        
+
         # Step 2: Process cost criteria
         explanation['steps'].append({
             'step_number': 2,
-            'title': 'Processed Matrix (Cost Criteria Handled)',
+            'title': 'Processed Matrix (Cost Criteria Converted)',
             'description': 'Convert cost criteria to benefit by taking reciprocals (1/x). Benefit criteria remain unchanged.',
             'matrix': self.intermediate_steps['processed_matrix'],
             'formula': 'For cost criteria: p_ij = 1/x_ij\nFor benefit criteria: p_ij = x_ij'
         })
-        
-        # Step 3: Weighted matrix (powers)
+
+        # Step 3: Pairwise comparison matrix
+        comparison_df = pd.DataFrame(
+            self.intermediate_steps['comparison_matrix'],
+            index=[f"A{i+1}" for i in range(len(self.alternatives))],
+            columns=[f"A{i+1}" for i in range(len(self.alternatives))]
+        )
+
         explanation['steps'].append({
             'step_number': 3,
-            'title': 'Weighted Matrix (Raised to Powers)',
-            'description': 'Raise each processed value to the power of its criterion weight.',
-            'matrix': self.intermediate_steps['weighted_matrix'],
-            'formula': 'v_ij = (p_ij)^w_j'
+            'title': 'Pairwise Comparison Matrix P(Ak/Al)',
+            'description': 'Calculate ratios between alternatives using the formula P(Ak/Al) = ∏(akj/alj)^wj. Values ≥1 indicate Ak is better than Al.',
+            'matrix': comparison_df,
+            'formula': 'P(Ak/Al) = ∏(akj/alj)^wj for j = 1 to n'
         })
-        
+
         # Step 4: Final scores
         scores_df = pd.DataFrame({
             'Alternative': self.alternatives,
-            'Product Score': self.results['scores'],
+            'Geometric Score': self.results['scores'],
             'Rank': self.results['rankings']
         }).sort_values('Rank')
-        
+
         explanation['steps'].append({
             'step_number': 4,
             'title': 'Final Scores and Rankings',
-            'description': 'Calculate the product of weighted values for each alternative.',
+            'description': 'Calculate geometric mean of pairwise comparison ratios for each alternative.',
             'matrix': scores_df,
-            'formula': 'S_i = Π(v_ij) for j = 1 to n'
+            'formula': 'Score_k = (∏P(Ak/Al))^(1/m) for l = 1 to m'
         })
-        
+
         return explanation
     
     @staticmethod
@@ -140,9 +171,10 @@ class WPM(MCDMMethod):
             'other_names': ['Weighted Product Model'],
             'complexity': 'Beginner',
             'description': '''
-            The Weighted Product Method (WPM) is similar to SAW but uses multiplication 
-            instead of addition. Each criterion value is raised to the power of its 
-            weight, and then all values for an alternative are multiplied together.
+            The Weighted Product Method (WPM) uses pairwise comparisons between alternatives.
+            For each pair of alternatives, it calculates ratios of their criterion values,
+            raises each ratio to the power of the criterion weight, and multiplies them together.
+            This approach avoids the "adding apples and oranges" problem of SAW.
             ''',
             'when_to_use': [
                 'When you want to avoid the rank reversal problem of SAW',
@@ -165,15 +197,20 @@ class WPM(MCDMMethod):
                 'Less intuitive interpretation of results'
             ],
             'mathematical_foundation': '''
-            WPM Score = Π((x_ij)^w_j) for j = 1 to n
-            
+            Primary WPM Formula (Pairwise Comparison):
+            P(Ak/Al) = Π((akj/alj)^wj) for j = 1 to n
+
             Where:
-            - x_ij = value of alternative i for criterion j
-            - w_j = weight of criterion j
+            - P(Ak/Al) = preference of alternative k over alternative l
+            - akj, alj = values of alternatives k and l for criterion j
+            - wj = weight of criterion j
             - n = number of criteria
             - Π = product operator
-            
-            For cost criteria: x_ij is replaced by 1/x_ij
+
+            If P(Ak/Al) ≥ 1, then alternative k is preferred over alternative l.
+
+            For cost criteria: values are replaced by their reciprocals (1/x).
+            Final ranking uses geometric mean of all pairwise comparisons.
             ''',
             'key_differences_from_saw': [
                 'Uses multiplication instead of addition',

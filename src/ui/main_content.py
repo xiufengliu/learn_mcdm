@@ -677,16 +677,26 @@ def render_wpm_formulas():
     st.write("For cost criteria:")
     st.latex(r"x'_{ij} = \frac{1}{x_{ij}}")
 
-    st.write("**Step 2: Calculate weighted product scores**")
-    st.latex(r"S_i = \prod_{j=1}^{n} (x'_{ij})^{w_j}")
+    st.write("**Step 2: Calculate pairwise comparison ratios**")
+    st.write("For each pair of alternatives k and l:")
+    st.latex(r"P(A_k/A_l) = \prod_{j=1}^{n} \left(\frac{x'_{kj}}{x'_{lj}}\right)^{w_j}")
 
-    st.write("**Step 3: Rank alternatives**")
-    st.write("Rank alternatives by $S_i$ (higher is better)")
+    st.write("**Step 3: Determine preference relationships**")
+    st.write("If $P(A_k/A_l) \\geq 1$, then alternative $A_k$ is preferred over $A_l$")
+
+    st.write("**Step 4: Calculate final scores**")
+    st.write("Geometric mean of all pairwise ratios:")
+    st.latex(r"S_k = \left(\prod_{l=1}^{m} P(A_k/A_l)\right)^{1/m}")
+
+    st.write("**Step 5: Rank alternatives**")
+    st.write("Rank alternatives by $S_k$ (higher is better)")
 
     st.write("Where:")
     st.write("- $x'_{ij}$ = transformed value for alternative $i$ on criterion $j$")
     st.write("- $w_j$ = weight of criterion $j$")
-    st.write("- $S_i$ = final score for alternative $i$")
+    st.write("- $P(A_k/A_l)$ = preference ratio of alternative $k$ over $l$")
+    st.write("- $m$ = number of alternatives")
+    st.write("- $S_k$ = final score for alternative $k$")
 
 def render_topsis_formulas():
     """Render TOPSIS mathematical formulas"""
