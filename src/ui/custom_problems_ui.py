@@ -154,7 +154,7 @@ def render_create_problem_tab():
                         max_value=1.0,
                         value=1.0/n_criteria,
                         step=0.01,
-                        key=f"weight_{i}",
+                        key=f"custom_weight_{i}",
                         format="%.3f"
                     )
                     weights.append(weight)
