@@ -36,17 +36,26 @@ def render_create_problem_tab():
     
     st.subheader("Create New Custom Problem")
     
+    # Weight method selection outside the form to allow immediate updates
+    st.subheader("Criteria Weights")
+    weight_method = st.radio(
+        "Weight assignment method",
+        ["Equal weights", "Custom weights"],
+        help="Choose how to assign importance to criteria",
+        key="weight_method_selection"
+    )
+
     with st.form("create_custom_problem"):
         # Basic information
         col1, col2 = st.columns(2)
-        
+
         with col1:
             problem_name = st.text_input(
                 "Problem Name*",
                 placeholder="e.g., My Decision Problem",
                 help="Give your problem a descriptive name"
             )
-        
+
         with col2:
             problem_description = st.text_area(
                 "Description*",
@@ -129,14 +138,7 @@ def render_create_problem_tab():
                     row.append(value)
             matrix_data.append(row)
         
-        # Weights
-        st.subheader("Criteria Weights")
-        weight_method = st.radio(
-            "Weight assignment method",
-            ["Equal weights", "Custom weights"],
-            help="Choose how to assign importance to criteria"
-        )
-        
+        # Weights (using the weight_method selected outside the form)
         weights = []
         if weight_method == "Equal weights":
             equal_weight = 1.0 / n_criteria
@@ -145,6 +147,7 @@ def render_create_problem_tab():
         else:
             st.write("Assign weights to each criterion (they will be normalized to sum to 1):")
             weight_cols = st.columns(min(n_criteria, 3))
+            temp_weights = []
             for i in range(n_criteria):
                 col_idx = i % 3
                 with weight_cols[col_idx]:
@@ -157,14 +160,23 @@ def render_create_problem_tab():
                         key=f"custom_weight_{i}",
                         format="%.3f"
                     )
-                    weights.append(weight)
-            
+                    temp_weights.append(weight)
+
             # Normalize weights
-            weight_sum = sum(weights)
+            weight_sum = sum(temp_weights)
             if weight_sum > 0:
-                weights = [w / weight_sum for w in weights]
+                weights = [w / weight_sum for w in temp_weights]
                 st.info(f"Weights will be normalized. Sum: {weight_sum:.3f}")
-        
+            else:
+                # Fallback to equal weights if all weights are zero
+                equal_weight = 1.0 / n_criteria
+                weights = [equal_weight] * n_criteria
+                st.warning("All weights are zero. Using equal weights as fallback.")
+
+        # Show current weights for verification
+        if weight_method == "Custom weights":
+            st.write(f"**Current weights:** {[f'{w:.3f}' for w in weights]}")
+
         # Submit button
         submitted = st.form_submit_button("💾 Save Custom Problem", type="primary")
         
