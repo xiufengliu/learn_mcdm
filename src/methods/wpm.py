@@ -32,11 +32,23 @@ class WPM(MCDMMethod):
         n_alternatives = len(self.alternatives)
 
         # Step 1: Handle cost criteria by taking reciprocals (convert to benefit)
-        processed_matrix = matrix.copy()
+        processed_matrix = matrix.copy().astype(float)
         for i, (col, ctype) in enumerate(zip(matrix.columns, self.criterion_types)):
+            col_values = matrix[col].astype(float)
+
+            # Ensure all values are positive to avoid invalid powers or divisions
+            if np.any(col_values <= 0):
+                positives = col_values[col_values > 0]
+                if len(positives) > 0:
+                    offset = positives.min() / 1000.0
+                else:
+                    offset = abs(col_values.min()) + 1e-6
+                col_values = col_values + offset
+
             if ctype == 'cost':
-                # For cost criteria, use reciprocal (1/x) to convert to benefit
-                processed_matrix[col] = 1.0 / matrix[col]
+                processed_matrix[col] = 1.0 / col_values
+            else:
+                processed_matrix[col] = col_values
 
         # Step 2: Calculate pairwise comparison ratios
         # Create a matrix to store P(Ak/Al) values

@@ -49,10 +49,52 @@ class TestSAW(unittest.TestCase):
         """Test SAW normalization"""
         saw = SAW(self.decision_matrix, self.weights, self.criterion_types)
         normalized = saw.normalize_matrix()
-        
+
         # Check that normalized values are between 0 and 1
         self.assertTrue((normalized >= 0).all().all())
         self.assertTrue((normalized <= 1).all().all())
+
+    def test_linear_normalization_constant_column(self):
+        """Linear normalization handles constant columns"""
+        matrix = pd.DataFrame(
+            [[5, 10], [5, 10], [5, 10]],
+            columns=["C1", "C2"],
+            index=["A1", "A2", "A3"],
+        )
+        weights = [0.5, 0.5]
+        c_types = ["benefit", "cost"]
+        saw = SAW(matrix, weights, c_types)
+        normalized = saw.normalize_matrix()
+        self.assertTrue((normalized["C1"] == 0).all())
+        self.assertTrue((normalized["C2"] == 0).all())
+
+    def test_vector_normalization_zero_values(self):
+        """Vector normalization avoids division by zero"""
+        matrix = pd.DataFrame(
+            [[0, 1], [0, 2], [0, 3]],
+            columns=["C1", "C2"],
+            index=["A1", "A2", "A3"],
+        )
+        weights = [0.5, 0.5]
+        c_types = ["benefit", "cost"]
+        saw = SAW(matrix, weights, c_types)
+        normalized = saw.normalize_matrix(method="vector")
+        self.assertFalse(np.isinf(normalized.values).any())
+        self.assertFalse(np.isnan(normalized.values).any())
+
+    def test_vector_normalization_negative_costs(self):
+        """Vector normalization handles negative or zero cost values gracefully"""
+        matrix = pd.DataFrame(
+            [[-1, 1], [0, 2], [1, 3]],
+            columns=["Cost", "Benefit"],
+            index=["A1", "A2", "A3"],
+        )
+        weights = [0.5, 0.5]
+        c_types = ["cost", "benefit"]
+        saw = SAW(matrix, weights, c_types)
+        normalized = saw.normalize_matrix(method="vector")
+        self.assertFalse(np.isinf(normalized.values).any())
+        self.assertFalse(np.isnan(normalized.values).any())
 
 class TestWPM(unittest.TestCase):
     """Test cases for WPM method"""
@@ -92,6 +134,21 @@ class TestWPM(unittest.TestCase):
         # Check that scores are positive (since we use products)
         scores = results['scores']
         self.assertTrue(all(score > 0 for score in scores))
+
+    def test_wpm_zero_cost_handling(self):
+        """WPM handles zero values in cost criteria without infinities"""
+        matrix = pd.DataFrame(
+            [[0, 1], [1, 1], [2, 1]],
+            columns=["Cost", "Benefit"],
+            index=["A1", "A2", "A3"],
+        )
+        weights = [0.5, 0.5]
+        c_types = ["cost", "benefit"]
+        wpm = WPM(matrix, weights, c_types)
+        results = wpm.calculate()
+        vals = np.array(results["scores"], dtype=float)
+        self.assertFalse(np.isinf(vals).any())
+        self.assertFalse(np.isnan(vals).any())
 
 class TestTOPSIS(unittest.TestCase):
     """Test cases for TOPSIS method"""
