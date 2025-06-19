@@ -5,10 +5,12 @@ Unit tests for MCDM methods
 import unittest
 import numpy as np
 import pandas as pd
+import warnings
 from src.methods.saw import SAW
 from src.methods.wpm import WPM
 from src.methods.topsis import TOPSIS
 from src.methods.ahp import AHP
+from src.utils.validation import validate_mcdm_inputs, validate_decision_matrix, validate_weights
 
 class TestSAW(unittest.TestCase):
     """Test cases for SAW method"""
@@ -266,6 +268,180 @@ class TestAHP(unittest.TestCase):
         self.assertIn('overall_consistent', consistency_results)
         self.assertIn('all_ratios', consistency_results)
         self.assertIsInstance(consistency_results['overall_consistent'], bool)
+
+class TestValidation(unittest.TestCase):
+    """Test cases for validation utilities"""
+
+    def test_validate_decision_matrix_empty(self):
+        """Test validation with empty matrix"""
+        empty_matrix = pd.DataFrame()
+        is_valid, errors, warnings = validate_decision_matrix(empty_matrix)
+        self.assertFalse(is_valid)
+        self.assertIn("empty", errors[0].lower())
+
+    def test_validate_decision_matrix_missing_values(self):
+        """Test validation with missing values"""
+        matrix = pd.DataFrame([[1, 2], [np.nan, 4]], columns=['C1', 'C2'])
+        is_valid, errors, warnings = validate_decision_matrix(matrix)
+        self.assertFalse(is_valid)
+        self.assertIn("missing values", errors[0].lower())
+
+    def test_validate_decision_matrix_non_numeric(self):
+        """Test validation with non-numeric values"""
+        matrix = pd.DataFrame([['a', 2], [3, 4]], columns=['C1', 'C2'])
+        is_valid, errors, warnings = validate_decision_matrix(matrix)
+        self.assertFalse(is_valid)
+        self.assertIn("non-numeric", errors[0].lower())
+
+    def test_validate_weights_negative(self):
+        """Test validation with negative weights"""
+        weights = [0.5, -0.3, 0.8]
+        is_valid, errors, warnings, normalized = validate_weights(weights)
+        self.assertFalse(is_valid)
+        self.assertIn("negative", errors[0].lower())
+
+    def test_validate_weights_zero_sum(self):
+        """Test validation with zero sum weights"""
+        weights = [0, 0, 0]
+        is_valid, errors, warnings, normalized = validate_weights(weights)
+        self.assertFalse(is_valid)
+        self.assertIn("zero", errors[0].lower())
+
+
+class TestEdgeCases(unittest.TestCase):
+    """Test cases for edge cases across all methods"""
+
+    def setUp(self):
+        """Set up edge case test data"""
+        # Matrix with identical values in one column
+        self.constant_column_matrix = pd.DataFrame([
+            [5, 10, 3],
+            [5, 20, 4],
+            [5, 15, 5]
+        ], columns=['Constant', 'Variable', 'Another'])
+
+        # Matrix with extreme values
+        self.extreme_values_matrix = pd.DataFrame([
+            [1, 1000000, 0.001],
+            [2, 1000001, 0.002],
+            [3, 1000002, 0.003]
+        ], columns=['Small', 'Large', 'Tiny'])
+
+        # Matrix with negative values
+        self.negative_values_matrix = pd.DataFrame([
+            [-5, 10, 3],
+            [-3, 20, 4],
+            [-1, 15, 5]
+        ], columns=['Negative', 'Positive', 'Another'])
+
+        self.weights = [0.33, 0.33, 0.34]
+        self.criterion_types = ['benefit', 'benefit', 'benefit']
+
+    def test_saw_constant_column(self):
+        """Test SAW with constant column values"""
+        saw = SAW(self.constant_column_matrix, self.weights, self.criterion_types)
+        results = saw.calculate()
+        self.assertIsNotNone(results)
+        self.assertEqual(len(results['scores']), 3)
+
+    def test_saw_extreme_values(self):
+        """Test SAW with extreme values"""
+        saw = SAW(self.extreme_values_matrix, self.weights, self.criterion_types)
+        results = saw.calculate()
+        self.assertIsNotNone(results)
+        self.assertFalse(any(np.isnan(results['scores'])))
+        self.assertFalse(any(np.isinf(results['scores'])))
+
+    def test_wpm_negative_values(self):
+        """Test WPM with negative values (should handle gracefully)"""
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # Suppress expected warnings
+            wpm = WPM(self.negative_values_matrix, self.weights, self.criterion_types)
+            results = wpm.calculate()
+            self.assertIsNotNone(results)
+            self.assertFalse(any(np.isnan(results['scores'])))
+            self.assertFalse(any(np.isinf(results['scores'])))
+
+    def test_topsis_constant_column(self):
+        """Test TOPSIS with constant column values"""
+        topsis = TOPSIS(self.constant_column_matrix, self.weights, self.criterion_types)
+        results = topsis.calculate()
+        self.assertIsNotNone(results)
+        self.assertTrue(all(0 <= score <= 1 for score in results['scores']))
+
+    def test_single_criterion(self):
+        """Test methods with single criterion"""
+        single_criterion_matrix = pd.DataFrame([[5], [10], [15]], columns=['Only'])
+        weights = [1.0]
+        criterion_types = ['benefit']
+
+        # Test SAW
+        saw = SAW(single_criterion_matrix, weights, criterion_types)
+        saw_results = saw.calculate()
+        self.assertEqual(len(saw_results['scores']), 3)
+
+        # Test TOPSIS
+        topsis = TOPSIS(single_criterion_matrix, weights, criterion_types)
+        topsis_results = topsis.calculate()
+        self.assertEqual(len(topsis_results['scores']), 3)
+
+
+class TestErrorHandling(unittest.TestCase):
+    """Test cases for error handling"""
+
+    def test_invalid_matrix_dimensions(self):
+        """Test error handling for invalid matrix dimensions"""
+        # Single alternative
+        single_alt_matrix = pd.DataFrame([[1, 2, 3]], columns=['C1', 'C2', 'C3'])
+        weights = [0.33, 0.33, 0.34]
+        criterion_types = ['benefit', 'benefit', 'benefit']
+
+        with self.assertRaises(ValueError):
+            SAW(single_alt_matrix, weights, criterion_types)
+
+    def test_mismatched_weights(self):
+        """Test error handling for mismatched weights"""
+        matrix = pd.DataFrame([[1, 2], [3, 4]], columns=['C1', 'C2'])
+        wrong_weights = [0.5, 0.3, 0.2]  # 3 weights for 2 criteria
+        criterion_types = ['benefit', 'benefit']
+
+        with self.assertRaises(ValueError):
+            SAW(matrix, wrong_weights, criterion_types)
+
+    def test_invalid_criterion_types(self):
+        """Test error handling for invalid criterion types"""
+        matrix = pd.DataFrame([[1, 2], [3, 4]], columns=['C1', 'C2'])
+        weights = [0.5, 0.5]
+        invalid_types = ['benefit', 'invalid']
+
+        with self.assertRaises(ValueError):
+            SAW(matrix, weights, invalid_types)
+
+    def test_ahp_invalid_pairwise_matrix(self):
+        """Test AHP error handling for invalid pairwise matrices"""
+        alternatives = ['A', 'B', 'C']
+        criteria = ['C1', 'C2']
+
+        # Invalid matrix (not reciprocal)
+        invalid_matrix = np.array([
+            [1, 3],
+            [2, 1]  # Should be 1/3, not 2
+        ])
+
+        ahp = AHP(alternatives=alternatives, criteria=criteria)
+        with self.assertRaises(ValueError):
+            ahp.calculate_priority_weights(invalid_matrix)
+
+    def test_wpm_all_zero_values(self):
+        """Test WPM error handling for all zero values in a column"""
+        matrix = pd.DataFrame([[0, 1], [0, 2]], columns=['Zero', 'Nonzero'])
+        weights = [0.5, 0.5]
+        criterion_types = ['benefit', 'benefit']
+
+        with self.assertRaises(ValueError):
+            wpm = WPM(matrix, weights, criterion_types)
+            wmp.calculate()
+
 
 if __name__ == '__main__':
     unittest.main()
