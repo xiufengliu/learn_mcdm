@@ -67,41 +67,100 @@ class AHP(MCDMMethod):
     def calculate_priority_weights(self, matrix):
         """
         Calculate priority weights from pairwise comparison matrix using eigenvalue method
-        
+
         Args:
             matrix (np.array): Pairwise comparison matrix
-            
+
         Returns:
             tuple: (weights, consistency_ratio)
+
+        Raises:
+            ValueError: If the matrix is invalid or produces negative weights
         """
         n = matrix.shape[0]
-        
+
+        # Validate matrix properties
+        if not self._validate_pairwise_matrix(matrix):
+            raise ValueError("Invalid pairwise comparison matrix: must be positive and reciprocal")
+
         # Calculate eigenvalues and eigenvectors
         eigenvalues, eigenvectors = np.linalg.eig(matrix)
-        
+
         # Find the principal eigenvalue (largest real eigenvalue)
         max_eigenvalue_idx = np.argmax(eigenvalues.real)
         max_eigenvalue = eigenvalues[max_eigenvalue_idx].real
         principal_eigenvector = eigenvectors[:, max_eigenvalue_idx].real
-        
+
         # Normalize the eigenvector to get weights
-        weights = principal_eigenvector / np.sum(principal_eigenvector)
-        weights = np.abs(weights)  # Ensure positive weights
-        
+        eigenvector_sum = np.sum(principal_eigenvector)
+        if abs(eigenvector_sum) < 1e-10:
+            raise ValueError("Invalid eigenvector: sum is too close to zero")
+
+        weights = principal_eigenvector / eigenvector_sum
+
+        # For a valid pairwise comparison matrix, all weights should be positive
+        # If any weight is negative, there's an issue with the matrix
+        if np.any(weights < -1e-10):  # Allow for small numerical errors
+            raise ValueError("Invalid pairwise comparison matrix: produced negative weights")
+
+        # Ensure all weights are positive (handle tiny negative values due to numerical precision)
+        weights = np.maximum(weights, 1e-10)
+        weights = weights / np.sum(weights)  # Renormalize after adjustment
+
         # Calculate consistency ratio
         consistency_index = (max_eigenvalue - n) / (n - 1) if n > 1 else 0
         random_index = self._get_random_index(n)
         consistency_ratio = consistency_index / random_index if random_index > 0 else 0
-        
+
         return weights, consistency_ratio
     
+    def _validate_pairwise_matrix(self, matrix):
+        """
+        Validate that the matrix is a proper pairwise comparison matrix
+
+        Args:
+            matrix (np.array): Matrix to validate
+
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        n = matrix.shape[0]
+
+        # Check if matrix is square
+        if matrix.shape[0] != matrix.shape[1]:
+            return False
+
+        # Check if all values are positive
+        if np.any(matrix <= 0):
+            return False
+
+        # Check if diagonal elements are 1 (within tolerance)
+        if not np.allclose(np.diag(matrix), 1.0, rtol=1e-6):
+            return False
+
+        # Check reciprocal property: matrix[i,j] * matrix[j,i] should be 1
+        for i in range(n):
+            for j in range(n):
+                if i != j:
+                    if not np.isclose(matrix[i, j] * matrix[j, i], 1.0, rtol=1e-6):
+                        return False
+
+        return True
+
     def _get_random_index(self, n):
         """Get random index for consistency calculation"""
-        # Random indices for matrices of different sizes
+        # Extended random indices for matrices of different sizes
+        # Based on Saaty's research and subsequent studies
         random_indices = {
-            1: 0, 2: 0, 3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41, 9: 1.45, 10: 1.49
+            1: 0, 2: 0, 3: 0.58, 4: 0.90, 5: 1.12, 6: 1.24, 7: 1.32, 8: 1.41,
+            9: 1.45, 10: 1.49, 11: 1.51, 12: 1.53, 13: 1.56, 14: 1.57, 15: 1.59
         }
-        return random_indices.get(n, 1.49)
+        # For larger matrices, use linear extrapolation
+        if n <= 15:
+            return random_indices.get(n, 1.59)
+        else:
+            # Linear extrapolation for n > 15
+            return 1.59 + (n - 15) * 0.01
     
     def calculate(self):
         """

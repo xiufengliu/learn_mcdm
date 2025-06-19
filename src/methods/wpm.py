@@ -37,13 +37,7 @@ class WPM(MCDMMethod):
             col_values = matrix[col].astype(float)
 
             # Ensure all values are positive to avoid invalid powers or divisions
-            if np.any(col_values <= 0):
-                positives = col_values[col_values > 0]
-                if len(positives) > 0:
-                    offset = positives.min() / 1000.0
-                else:
-                    offset = abs(col_values.min()) + 1e-6
-                col_values = col_values + offset
+            col_values = self._ensure_positive_values(col_values, col)
 
             if ctype == 'cost':
                 processed_matrix[col] = 1.0 / col_values
@@ -74,9 +68,18 @@ class WPM(MCDMMethod):
         # This gives more nuanced scoring
         geometric_scores = np.zeros(n_alternatives)
         for k in range(n_alternatives):
-            # Calculate geometric mean of all ratios for alternative k
+            # Calculate geometric mean of all ratios for alternative k using logarithms
+            # This avoids numerical overflow/underflow issues
             ratios = comparison_matrix[k, :]
-            geometric_scores[k] = np.power(np.prod(ratios), 1.0/n_alternatives)
+
+            # Check for any non-positive ratios (shouldn't happen with proper input)
+            if np.any(ratios <= 0):
+                raise ValueError(f"Invalid comparison ratio found for alternative {k}. "
+                               "All ratios must be positive.")
+
+            # Use logarithmic approach: geometric_mean = exp(mean(log(ratios)))
+            log_ratios = np.log(ratios)
+            geometric_scores[k] = np.exp(np.mean(log_ratios))
 
         # Use geometric scores for final ranking (more discriminating)
         final_scores = geometric_scores
@@ -103,7 +106,47 @@ class WPM(MCDMMethod):
         }
 
         return self.results
-    
+
+    def _ensure_positive_values(self, values, column_name):
+        """
+        Ensure all values are positive for WPM calculations
+
+        Args:
+            values (pd.Series or np.array): Values to process
+            column_name (str): Name of the column for error reporting
+
+        Returns:
+            np.array: Positive values
+
+        Raises:
+            ValueError: If values cannot be made positive meaningfully
+        """
+        values = np.array(values, dtype=float)
+
+        if np.all(values > 0):
+            return values
+
+        min_val = np.min(values)
+
+        if min_val <= 0:
+            if np.all(values <= 0):
+                raise ValueError(f"Column '{column_name}' contains only non-positive values. "
+                               "WPM requires positive values for meaningful calculations.")
+
+            # Shift all values to make them positive
+            # Use the absolute value of the minimum plus 1 to ensure all values are >= 1
+            offset = abs(min_val) + 1.0
+            values = values + offset
+
+            # Log a warning about the transformation
+            import warnings
+            warnings.warn(f"Column '{column_name}' contained non-positive values. "
+                         f"Added offset of {offset:.3f} to ensure positive values. "
+                         "This may affect the relative importance of alternatives.",
+                         UserWarning)
+
+        return values
+
     def get_step_by_step_explanation(self):
         """
         Get detailed step-by-step explanation of the calculation

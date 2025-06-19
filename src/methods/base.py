@@ -5,6 +5,7 @@ Base class for MCDM methods
 import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod
+from ..utils.normalization import normalize_matrix as normalize_matrix_util
 
 class MCDMMethod(ABC):
     """
@@ -47,80 +48,92 @@ class MCDMMethod(ABC):
             return pd.DataFrame(matrix, index=alternatives, columns=criteria)
     
     def _validate_inputs(self):
-        """Validate input parameters"""
+        """
+        Validate input parameters with comprehensive error checking
+
+        Raises:
+            ValueError: If inputs are invalid
+            TypeError: If inputs have wrong types
+        """
+        if self.decision_matrix is None:
+            raise ValueError("Decision matrix cannot be None")
+
+        if self.decision_matrix.empty:
+            raise ValueError("Decision matrix cannot be empty")
+
         n_alternatives, n_criteria = self.decision_matrix.shape
-        
+
+        # Validate matrix dimensions
+        if n_alternatives < 2:
+            raise ValueError(f"Decision matrix must have at least 2 alternatives, got {n_alternatives}")
+
+        if n_criteria < 1:
+            raise ValueError(f"Decision matrix must have at least 1 criterion, got {n_criteria}")
+
+        # Validate weights
+        if self.weights is None:
+            raise ValueError("Weights cannot be None")
+
         if len(self.weights) != n_criteria:
             raise ValueError(f"Number of weights ({len(self.weights)}) must match number of criteria ({n_criteria})")
-        
+
+        # Check for non-numeric weights
+        try:
+            self.weights = np.array(self.weights, dtype=float)
+        except (ValueError, TypeError) as e:
+            raise TypeError(f"Weights must be numeric: {e}")
+
+        # Check for negative weights
+        if np.any(self.weights < 0):
+            raise ValueError("All weights must be non-negative")
+
+        # Check for zero sum
+        if np.sum(self.weights) == 0:
+            raise ValueError("Sum of weights cannot be zero")
+
+        # Validate criterion types
+        if self.criterion_types is None:
+            raise ValueError("Criterion types cannot be None")
+
         if len(self.criterion_types) != n_criteria:
             raise ValueError(f"Number of criterion types ({len(self.criterion_types)}) must match number of criteria ({n_criteria})")
-        
+
         if not all(ct in ['benefit', 'cost'] for ct in self.criterion_types):
-            raise ValueError("Criterion types must be 'benefit' or 'cost'")
-        
+            invalid_types = [ct for ct in self.criterion_types if ct not in ['benefit', 'cost']]
+            raise ValueError(f"Invalid criterion types: {invalid_types}. Must be 'benefit' or 'cost'")
+
+        # Validate decision matrix values
+        try:
+            self.decision_matrix.astype(float)
+        except (ValueError, TypeError) as e:
+            raise TypeError(f"Decision matrix must contain only numeric values: {e}")
+
+        # Check for missing values
+        if self.decision_matrix.isnull().any().any():
+            raise ValueError("Decision matrix cannot contain missing values")
+
+        # Normalize weights if needed
         if not np.allclose(np.sum(self.weights), 1.0, rtol=1e-5):
-            # Normalize weights
-            self.weights = self.weights / np.sum(self.weights)
+            import warnings
+            original_sum = np.sum(self.weights)
+            self.weights = self.weights / original_sum
+            warnings.warn(f"Weights were normalized to sum to 1.0 (original sum: {original_sum:.4f})",
+                         UserWarning)
     
     def normalize_matrix(self, method='linear'):
         """
-        Normalize the decision matrix
-        
+        Normalize the decision matrix using improved normalization utilities
+
         Args:
-            method (str): Normalization method ('linear', 'vector')
-            
+            method (str): Normalization method ('linear', 'vector', 'max', 'sum')
+
         Returns:
             pd.DataFrame: Normalized matrix
-        """
-        matrix = self.decision_matrix.copy()
-        
-        if method == 'linear':
-            # Linear normalization (min-max)
-            for i, (col, ctype) in enumerate(zip(matrix.columns, self.criterion_types)):
-                col_values = matrix[col]
-                range_val = col_values.max() - col_values.min()
-                if range_val == 0:
-                    # Avoid division by zero when all values are equal
-                    matrix[col] = 0.0
-                else:
-                    if ctype == 'benefit':
-                        # For benefit criteria: (x - min) / (max - min)
-                        matrix[col] = (col_values - col_values.min()) / range_val
-                    else:
-                        # For cost criteria: (max - x) / (max - min)
-                        matrix[col] = (col_values.max() - col_values) / range_val
-        
-        elif method == 'vector':
-            # Vector normalization
-            for i, (col, ctype) in enumerate(zip(matrix.columns, self.criterion_types)):
-                col_values = matrix[col].astype(float)
-                if ctype == 'benefit':
-                    norm = np.sqrt(np.sum(col_values ** 2))
-                    if norm != 0:
-                        matrix[col] = col_values / norm
-                    else:
-                        matrix[col] = 0.0
-                else:
-                    # For cost criteria, convert values so reciprocals are finite
-                    if np.any(col_values <= 0):
-                        # Shift values based on smallest positive entry or
-                        # by the absolute minimum when all are non-positive
-                        positives = col_values[col_values > 0]
-                        if len(positives) > 0:
-                            offset = positives.min() / 1000.0
-                        else:
-                            offset = abs(col_values.min()) + 1e-6
-                        col_values = col_values + offset
 
-                    inv_values = 1 / col_values
-                    norm = np.sqrt(np.sum(inv_values ** 2))
-                    if norm != 0:
-                        matrix[col] = inv_values / norm
-                    else:
-                        matrix[col] = 0.0
-        
-        return matrix
+        Raises:
+            ValueError: If normalization method is not supported
+        """
+        return normalize_matrix_util(self.decision_matrix, self.criterion_types, method)
     
     @abstractmethod
     def calculate(self):
