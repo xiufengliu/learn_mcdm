@@ -79,23 +79,46 @@ class MCDMMethod(ABC):
             # Linear normalization (min-max)
             for i, (col, ctype) in enumerate(zip(matrix.columns, self.criterion_types)):
                 col_values = matrix[col]
-                if ctype == 'benefit':
-                    # For benefit criteria: (x - min) / (max - min)
-                    matrix[col] = (col_values - col_values.min()) / (col_values.max() - col_values.min())
+                range_val = col_values.max() - col_values.min()
+                if range_val == 0:
+                    # Avoid division by zero when all values are equal
+                    matrix[col] = 0.0
                 else:
-                    # For cost criteria: (max - x) / (max - min)
-                    matrix[col] = (col_values.max() - col_values) / (col_values.max() - col_values.min())
+                    if ctype == 'benefit':
+                        # For benefit criteria: (x - min) / (max - min)
+                        matrix[col] = (col_values - col_values.min()) / range_val
+                    else:
+                        # For cost criteria: (max - x) / (max - min)
+                        matrix[col] = (col_values.max() - col_values) / range_val
         
         elif method == 'vector':
             # Vector normalization
             for i, (col, ctype) in enumerate(zip(matrix.columns, self.criterion_types)):
-                col_values = matrix[col]
-                norm = np.sqrt(np.sum(col_values**2))
+                col_values = matrix[col].astype(float)
                 if ctype == 'benefit':
-                    matrix[col] = col_values / norm
+                    norm = np.sqrt(np.sum(col_values ** 2))
+                    if norm != 0:
+                        matrix[col] = col_values / norm
+                    else:
+                        matrix[col] = 0.0
                 else:
-                    # For cost criteria, invert after normalization
-                    matrix[col] = (1 / col_values) / np.sqrt(np.sum((1 / col_values)**2))
+                    # For cost criteria, convert values so reciprocals are finite
+                    if np.any(col_values <= 0):
+                        # Shift values based on smallest positive entry or
+                        # by the absolute minimum when all are non-positive
+                        positives = col_values[col_values > 0]
+                        if len(positives) > 0:
+                            offset = positives.min() / 1000.0
+                        else:
+                            offset = abs(col_values.min()) + 1e-6
+                        col_values = col_values + offset
+
+                    inv_values = 1 / col_values
+                    norm = np.sqrt(np.sum(inv_values ** 2))
+                    if norm != 0:
+                        matrix[col] = inv_values / norm
+                    else:
+                        matrix[col] = 0.0
         
         return matrix
     
